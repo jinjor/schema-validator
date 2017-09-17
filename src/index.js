@@ -5,26 +5,50 @@ const assign = obj => overrides => Object.assign({}, obj, overrides);
 function init(_validate) {
   const schema = {};
   schema._validate = _validate;
-  schema.map = map(schema);
   schema.then = then(schema);
   schema.validate = validate(schema);
+  schema.min = min(schema);
+  schema.max = max(schema);
+  schema.required = required(schema);
   return schema;
 }
 
 // conversion
-const map = schema => f => assign(schema, {
-  _validate: context => value => f(schema.value)
-});
-const then = schema => f => init(context => value => {
-  const newValue = schema._validate(value);
+const then = schema => f => init((value, context) => {
+  const newValue = schema._validate(value, context);
   if (newValue instanceof Error) {
     return newValue;
   }
-  return f(context)(newValue);
-})
+  return f(newValue, context);
+});
+
+const min = schema => minValue => schema.then(value => {
+  if (value >= minValue) {
+    return value;
+  }
+  return new Error(value + ' should not be less than ' + minValue);
+});
+const max = schema => maxValue => schema.then(value => {
+  if (value <= maxValue) {
+    return value;
+  }
+  return new Error(value + ' should not be greater than ' + maxValue);
+});
+const required = schema => _ => schema.then(value => {
+  if (typeof value !== 'undefined') {
+    return value;
+  }
+  return new Error(value + ' is required');
+});
+
 
 // primitives
-const typeOf = typeName => init(context => value => {
+const succeed = value => init(_ => value);
+const fail = message => init(_ => new Error(message));
+const typeOf = typeName => init(value => {
+  if (typeof value === 'undefined') {
+    return value;
+  }
   if (typeof value === typeName) {
     return value;
   } else {
@@ -32,10 +56,25 @@ const typeOf = typeName => init(context => value => {
   }
 });
 
+// structure
+
+const array = schema => init(value => {
+  schema = schema || any;
+  if (typeof value === 'undefined') {
+    return value;
+  }
+  if (typeof value.length === 'undefined' || typeof value.map === 'undefined') {
+    return new Error(value + ' is not an array');
+  }
+  return value.map(item => {
+    return schema.validate(item);
+  });
+});
+
 // validate
 const initialContext = {};
 const validate = schema => value => {
-  var newValue = schema._validate(initialContext)(value)
+  var newValue = schema._validate(value, initialContext);
   if (newValue instanceof Error) {
     throw newValue;
   }
@@ -48,7 +87,7 @@ const number = typeOf('number');
 const string = typeOf('string');
 const func = typeOf('function');
 const object = typeOf('object');
-const any = typeOf('any', context => value => true);
+const any = init(value => value);
 
 module.exports = {
   boolean: boolean,
@@ -56,5 +95,5 @@ module.exports = {
   string: string,
   func: func,
   object: object,
-  any: any
-};
+  array: array
+}
