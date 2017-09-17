@@ -3,9 +3,10 @@ const assign = (obj, overrides) => Object.assign({}, obj, overrides);
 const isUndefined = a => typeof a === 'undefined';
 
 // schema object
-const makeSchemaObject = (plugins, _validate) => {
+const init = (plugins, _validate) => {
   const schema = {};
-  schema._validate = _validate;
+  schema._plugins = plugins;
+  schema._validate = _validate || (value => value);
   schema.then = then(schema);
   schema.validate = validate(schema);
   plugins.forEach(plugin => {
@@ -23,11 +24,23 @@ const makeSchemaObject = (plugins, _validate) => {
   return schema;
 };
 
-const init = _validate => makeSchemaObject([basics, types], _validate);
-const pipe = toFunction => schema => args => schema.then(toFunction(args));
+// validate
+const initialContext = {};
+const validate = schema => value => {
+  var newValue = schema._validate(value, initialContext);
+  if (newValue instanceof Error) {
+    throw newValue;
+  }
+  if (newValue && newValue._validate) {
+    return validate(newValue)(value);
+  }
+  return newValue;
+};
+
+const pipe = toFunction => schema => (arg1, arg2, arg3, arg4) => schema.then(toFunction(arg1, arg2, arg3, arg4));
 
 // conversion
-const then = schema => f => init((value, context) => {
+const then = schema => f => init(schema._plugins, (value, context) => {
   const newValue = schema._validate(value, context);
   if (newValue instanceof Error) {
     return newValue;
@@ -61,55 +74,38 @@ const types = {
   func: pipe(_ => value => checkType('function', value)),
 };
 
-// validate
-const initialContext = {};
-const validate = schema => value => {
-  var newValue = schema._validate(value, initialContext);
-  if (newValue instanceof Error) {
-    throw newValue;
-  }
-  if (newValue && newValue._validate) {
-    return validate(newValue)(value);
-  }
-  return newValue;
+// structures plugin
+const structures = {
+  array: pipe(itemSchema => value => {
+    if (isUndefined(value)) {
+      return value;
+    }
+    if (isUndefined(value.length)) {
+      return new Error(value + ' is not an array');
+    }
+    return value.map(item => {
+      if (isUndefined(itemSchema)) {
+        return item;
+      }
+      return itemSchema.validate(item);
+    });
+  }),
+  object: pipe(schemaGenerators => value => {
+    return (schemaGenerators || []).reduce((memo, toSchema) => {
+      return assign(memo, toSchema(memo).validate(value));
+    }, {});
+  }),
+  field: pipe((key, schema) => value => {
+    const v = value[key];
+    return {
+      [key]: schema.validate(v)
+    };
+  }),
 };
 
-// primitives
-const any = init(value => value);
-
-// structure
-const array = itemSchema => init(value => {
-  itemSchema = itemSchema || any;
-  if (isUndefined(value)) {
-    return value;
-  }
-  if (isUndefined(value.length)) {
-    return new Error(value + ' is not an array');
-  }
-  return value.map(item => {
-    return itemSchema.validate(item);
-  });
-});
-const object = schemaGenerators => any.typeOf('object').then(value => {
-  schemaGenerators = schemaGenerators || [];
-  return schemaGenerators.reduce((memo, toSchema) => {
-    return assign(memo, toSchema(memo).validate(value));
-  }, {});
-});
-const field = (key, schema) => init(value => {
-  const v = value[key];
-  return {
-    [key]: schema.validate(v)
+module.exports = options => {
+  options = options || {
+    plugins: []
   };
-});
-
-module.exports = {
-  any: () => any,
-  boolean: any.boolean,
-  number: any.number,
-  string: any.string,
-  func: any.func,
-  object: object,
-  array: array,
-  field: field
+  return init([basics, types, structures].concat(options.plugins));
 };

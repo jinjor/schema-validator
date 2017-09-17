@@ -1,6 +1,7 @@
-const sv = require('../src/index.js');
+const SV = require('../src/index.js');
 const chai = require('chai');
 const assert = chai.assert;
+const sv = SV();
 
 describe('schema-validator', function() {
   describe('#validate()', function() {
