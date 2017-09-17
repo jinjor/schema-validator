@@ -3,19 +3,25 @@ const assign = (obj, overrides) => Object.assign({}, obj, overrides);
 const isUndefined = a => typeof a === 'undefined';
 
 // schema object
-function init(_validate) {
+const makeSchemaObject = (proto, _validate) => {
   const schema = {};
   schema._validate = _validate;
   schema.then = then(schema);
-  schema.lt = lt(schema);
-  schema.gt = gt(schema);
-  schema.min = min(schema);
-  schema.max = max(schema);
-  schema.required = required(schema);
-  schema.default = _default(schema);
   schema.validate = validate(schema);
+  Object.keys(proto).forEach(key => {
+    if (schema[key]) {
+      throw new Error(`PluginError: Function ${key} is already defined.`);
+    }
+    const f = proto[key];
+    if (typeof f !== 'function') {
+      throw new Error(`PluginError: Plugin ${key} is mulformed. Value should be a function.`);
+    }
+    schema[key] = f(schema);
+  });
   return schema;
-}
+};
+
+const init = _validate => makeSchemaObject(basics, _validate);
 
 // conversion
 const then = schema => f => init((value, context) => {
@@ -26,15 +32,17 @@ const then = schema => f => init((value, context) => {
   return f(newValue, context);
 });
 
-// pipes
+// basic plugin
 const pipe = toFunction => schema => args => schema.then(toFunction(args));
-const equal = pipe(expect => value => expect === value ? value : new Error(value + ' should be equal to ' + expected));
-const lt = pipe(limit => value => (value < limit) ? value : new Error(value + ' should be less than ' + limit));
-const gt = pipe(limit => value => (value > limit) ? value : new Error(value + ' should be greater than ' + limit));
-const min = pipe(limit => value => (value >= limit) ? value : new Error(value + ' should not be less than ' + limit));
-const max = pipe(limit => value => (value <= limit) ? value : new Error(value + ' should not be greater than ' + limit));
-const required = pipe(_ => value => !isUndefined(value) ? value : new Error(value + ' is required'));
-const _default = pipe(defaultValue => value => isUndefined(value) ? defaultValue : value);
+const basics = {
+  equal: pipe(expect => value => (expect === value) ? value : new Error(value + ' should be equal to ' + expected)),
+  lt: pipe(limit => value => (value < limit) ? value : new Error(value + ' should be less than ' + limit)),
+  gt: pipe(limit => value => (value > limit) ? value : new Error(value + ' should be greater than ' + limit)),
+  min: pipe(limit => value => (value >= limit) ? value : new Error(value + ' should not be less than ' + limit)),
+  max: pipe(limit => value => (value <= limit) ? value : new Error(value + ' should not be greater than ' + limit)),
+  required: pipe(_ => value => !isUndefined(value) ? value : new Error(value + ' is required')),
+  default: pipe(defaultValue => value => isUndefined(value) ? defaultValue : value)
+};
 
 // primitives
 const succeed = value => init(_ => value);
