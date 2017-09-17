@@ -1,5 +1,5 @@
 // utility
-const assign = obj => overrides => Object.assign({}, obj, overrides);
+const assign = (obj, overrides) => Object.assign({}, obj, overrides);
 
 // schema object
 function init(_validate) {
@@ -10,6 +10,8 @@ function init(_validate) {
   schema.min = min(schema);
   schema.max = max(schema);
   schema.required = required(schema);
+  schema.siblings = siblings(schema);
+  schema.default = _default(schema);
   return schema;
 }
 
@@ -21,7 +23,22 @@ const then = schema => f => init((value, context) => {
   }
   return f(newValue, context);
 });
-
+const siblings = schema => toNextFields => init(value => {
+  return schema.then(field => {
+    const value = field[Object.keys(field)[0]];
+    return toNextFields(value).reduce((memo, nextField) => {
+      return assign(memo, nextField.validate(value));
+    }, field);
+  });
+});
+const _default = schema => defaultValue => schema.then(value => {
+  if (typeof value === 'undefined') {
+    return defaultValue;
+  } else {
+    return value;
+  }
+})
+//
 const min = schema => minValue => schema.then(value => {
   if (value >= minValue) {
     return value;
@@ -78,6 +95,9 @@ const validate = schema => value => {
   if (newValue instanceof Error) {
     throw newValue;
   }
+  if (newValue && newValue._validate) {
+    return validate(newValue)(value);
+  }
   return newValue;
 };
 
@@ -86,8 +106,22 @@ const boolean = typeOf('boolean');
 const number = typeOf('number');
 const string = typeOf('string');
 const func = typeOf('function');
-const object = typeOf('object');
+const object = fields => typeOf('object').then(value => {
+  fields = fields || [];
+  return fields.reduce((memo, field) => {
+    return assign(memo, field.validate(value));
+  }, {});
+});
+
+
+
 const any = init(value => value);
+
+const field = (key, schema) => init(value => {
+  return {
+    [key]: schema.validate(value[key])
+  };
+});
 
 module.exports = {
   boolean: boolean,
@@ -95,5 +129,6 @@ module.exports = {
   string: string,
   func: func,
   object: object,
-  array: array
+  array: array,
+  field: field
 }

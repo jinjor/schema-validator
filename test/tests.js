@@ -37,5 +37,29 @@ describe('schema-validator', function() {
       assert.throws(() => sv.array(sv.number).validate(['1', 2]));
       assert.throws(() => sv.array(sv.number.min(3)).validate([5, 2, 4]));
     });
+    it('should validate object', function() {
+      const schema = sv.object([
+        sv.field('a', sv.number.then(v => v * 2)),
+        sv.field('b', sv.string.then(v => v.toUpperCase())),
+        sv.field('c', sv.array(sv.number)).siblings(arr => {
+          return (arr.length > 0) ? [
+            sv.field('d', sv.object())
+          ] : [];
+        }),
+        sv.field('e', sv.boolean.default(false)),
+      ]);
+      assert.deepEqual({
+        a: 2,
+        b: 'FOO',
+        c: [10, 20, 30],
+        d: {},
+        e: false
+      }, schema.validate({
+        a: 1,
+        b: 'foo',
+        c: [10, 20, 30],
+        d: {}
+      }));
+    });
   });
 });
