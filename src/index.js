@@ -1,17 +1,19 @@
 // utility
 const assign = (obj, overrides) => Object.assign({}, obj, overrides);
+const isUndefined = a => typeof a === 'undefined';
 
 // schema object
 function init(_validate) {
   const schema = {};
   schema._validate = _validate;
   schema.then = then(schema);
-  schema.validate = validate(schema);
+  schema.lt = lt(schema);
+  schema.gt = gt(schema);
   schema.min = min(schema);
   schema.max = max(schema);
   schema.required = required(schema);
-  schema.siblings = siblings(schema);
   schema.default = _default(schema);
+  schema.validate = validate(schema);
   return schema;
 }
 
@@ -23,47 +25,22 @@ const then = schema => f => init((value, context) => {
   }
   return f(newValue, context);
 });
-const siblings = schema => toNextFields => init(value => {
-  return schema.then(field => {
-    const value = field[Object.keys(field)[0]];
-    return toNextFields(value).reduce((memo, nextField) => {
-      return assign(memo, nextField.validate(value));
-    }, field);
-  });
-});
-const _default = schema => defaultValue => schema.then(value => {
-  if (typeof value === 'undefined') {
-    return defaultValue;
-  } else {
-    return value;
-  }
-})
-//
-const min = schema => minValue => schema.then(value => {
-  if (value >= minValue) {
-    return value;
-  }
-  return new Error(value + ' should not be less than ' + minValue);
-});
-const max = schema => maxValue => schema.then(value => {
-  if (value <= maxValue) {
-    return value;
-  }
-  return new Error(value + ' should not be greater than ' + maxValue);
-});
-const required = schema => _ => schema.then(value => {
-  if (typeof value !== 'undefined') {
-    return value;
-  }
-  return new Error(value + ' is required');
-});
 
+// pipes
+const pipe = toFunction => schema => args => schema.then(toFunction(args));
+const equal = pipe(expect => value => expect === value ? value : new Error(value + ' should be equal to ' + expected));
+const lt = pipe(limit => value => (value < limit) ? value : new Error(value + ' should be less than ' + limit));
+const gt = pipe(limit => value => (value > limit) ? value : new Error(value + ' should be greater than ' + limit));
+const min = pipe(limit => value => (value >= limit) ? value : new Error(value + ' should not be less than ' + limit));
+const max = pipe(limit => value => (value <= limit) ? value : new Error(value + ' should not be greater than ' + limit));
+const required = pipe(_ => value => !isUndefined(value) ? value : new Error(value + ' is required'));
+const _default = pipe(defaultValue => value => isUndefined(value) ? defaultValue : value);
 
 // primitives
 const succeed = value => init(_ => value);
 const fail = message => init(_ => new Error(message));
 const typeOf = typeName => init(value => {
-  if (typeof value === 'undefined') {
+  if (isUndefined(value)) {
     return value;
   }
   if (typeof value === typeName) {
@@ -71,21 +48,6 @@ const typeOf = typeName => init(value => {
   } else {
     return new Error(value + ' is not a ' + typeName);
   }
-});
-
-// structure
-
-const array = schema => init(value => {
-  schema = schema || any;
-  if (typeof value === 'undefined') {
-    return value;
-  }
-  if (typeof value.length === 'undefined' || typeof value.map === 'undefined') {
-    return new Error(value + ' is not an array');
-  }
-  return value.map(item => {
-    return schema.validate(item);
-  });
 });
 
 // validate
@@ -106,17 +68,27 @@ const boolean = typeOf('boolean');
 const number = typeOf('number');
 const string = typeOf('string');
 const func = typeOf('function');
-const object = fields => typeOf('object').then(value => {
-  fields = fields || [];
-  return fields.reduce((memo, field) => {
-    return assign(memo, field.validate(value));
-  }, {});
-});
-
-
-
 const any = init(value => value);
 
+// structure
+const array = schema => init(value => {
+  schema = schema || any;
+  if (isUndefined(value)) {
+    return value;
+  }
+  if (isUndefined(value.length)) {
+    return new Error(value + ' is not an array');
+  }
+  return value.map(item => {
+    return schema.validate(item);
+  });
+});
+const object = schemaGenerators => typeOf('object').then(value => {
+  schemaGenerators = schemaGenerators || [];
+  return schemaGenerators.reduce((memo, toSchema) => {
+    return assign(memo, toSchema(memo).validate(value));
+  }, {});
+});
 const field = (key, schema) => init(value => {
   return {
     [key]: schema.validate(value[key])
@@ -131,4 +103,4 @@ module.exports = {
   object: object,
   array: array,
   field: field
-}
+};

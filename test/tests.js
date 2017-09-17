@@ -39,14 +39,11 @@ describe('schema-validator', function() {
     });
     it('should validate object', function() {
       const schema = sv.object([
-        sv.field('a', sv.number.then(v => v * 2)),
-        sv.field('b', sv.string.then(v => v.toUpperCase())),
-        sv.field('c', sv.array(sv.number)).siblings(arr => {
-          return (arr.length > 0) ? [
-            sv.field('d', sv.object())
-          ] : [];
-        }),
-        sv.field('e', sv.boolean.default(false)),
+        _ => sv.field('a', sv.number.then(v => v * 2)),
+        _ => sv.field('b', sv.string.then(v => v.toUpperCase())),
+        _ => sv.field('c', sv.array(sv.number)),
+        o => (o.c.length > 0) ? sv.field('d', sv.object()) : sv.any,
+        _ => sv.field('e', sv.boolean.default(false)),
       ]);
       assert.deepEqual({
         a: 2,
