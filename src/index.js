@@ -12,13 +12,11 @@ const init = (plugins, _validate) => {
   return schema;
 };
 
-function addPlugins(schema, plugins) {
-  plugins.forEach(plugin => {
-    addPlugin(schema, plugin);
-  });
+const addPlugins = (schema, plugins) => {
+  plugins.forEach(addPlugin(schema));
 }
 
-function addPlugin(schema, plugin) {
+const addPlugin = schema => plugin => {
   Object.keys(plugin).forEach(key => {
     if (schema[key]) {
       throw new Error(`PluginError: Function ${key} is already defined.`);
