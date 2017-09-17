@@ -55,15 +55,12 @@ const basics = {
   gt: pipe(limit => value => (value > limit) ? value : new Error(value + ' should be greater than ' + limit)),
   min: pipe(limit => value => (value >= limit) ? value : new Error(value + ' should not be less than ' + limit)),
   max: pipe(limit => value => (value <= limit) ? value : new Error(value + ' should not be greater than ' + limit)),
-  required: pipe(_ => value => !isUndefined(value) ? value : new Error(value + ' is required')),
-  default: pipe(defaultValue => value => isUndefined(value) ? defaultValue : value),
+  required: schema => _ => init(schema._plugins, value => !isUndefined(value) ? schema.validate(value) : new Error(value + ' is required')),
+  default: schema => defaultValue => init(schema._plugins, value => !isUndefined(value) ? schema.validate(value) : defaultValue),
 };
 
 // types plugin
 const checkType = (typeName, value) => {
-  if (isUndefined(value)) {
-    return value;
-  }
   return (typeof value === typeName) ? value : new Error(value + ' is not a ' + typeName)
 }
 const types = {

@@ -8,14 +8,11 @@ describe('schema-validator', function() {
     it('should validate number', function() {
       assert.equal(0, sv.number().validate(0));
       assert.equal(1, sv.number().validate(1));
-      assert.equal(undefined, sv.number().validate());
       assert.equal(Infinity, sv.number().validate(Infinity));
       assert.throws(() => sv.number().validate(null));
       assert.throws(() => sv.number().validate({}));
       assert.throws(() => sv.number().validate(''));
       assert.throws(() => sv.number().validate(() => {}));
-      //
-      assert.throws(() => sv.number().required().validate());
     });
     it('should validate min and max', function() {
       assert.equal(1, sv.number().min(1).validate(1));
@@ -57,6 +54,20 @@ describe('schema-validator', function() {
         c: [10, 20, 30],
         d: {}
       }));
+    });
+    it('should validate required', function() {
+      assert.equal(0, sv.number().validate(0));
+      assert.throws(() => sv.number().validate());
+      assert.equal(0, sv.number().required().validate(0));
+      assert.equal(0, sv.required().number().validate(0));
+      assert.throws(() => sv.number().required().validate());
+      assert.throws(() => sv.required().number().validate());
+    });
+    it('should validate default', function() {
+      assert.equal(0, sv.default(1).number().validate(0));
+      assert.equal(0, sv.number().default(1).validate(0));
+      assert.equal(1, sv.default(1).number().validate());
+      assert.equal(1, sv.number().default(1).validate());
     });
   });
 });
