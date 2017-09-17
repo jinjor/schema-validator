@@ -1,7 +1,13 @@
 const SV = require('../src/index.js');
 const chai = require('chai');
 const assert = chai.assert;
-const sv = SV();
+const sv = SV({
+  plugins: [{
+    isHello: schema => _ => schema.then(value => {
+      return (value === 'hello') ? value : new Error('value is not hello :(');
+    }),
+  }]
+});
 
 describe('schema-validator', function() {
   describe('#validate()', function() {
@@ -68,6 +74,10 @@ describe('schema-validator', function() {
       assert.equal(0, sv.number().default(1).validate(0));
       assert.equal(1, sv.default(1).number().validate());
       assert.equal(1, sv.number().default(1).validate());
+    });
+    it('should read custom plugin', function() {
+      assert.equal('hello', sv.isHello().validate('hello'));
+      assert.throws(() => sv.isHello().validate('bye'));
     });
   });
 });
