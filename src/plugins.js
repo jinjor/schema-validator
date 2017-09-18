@@ -1,6 +1,13 @@
 // utility
 const isUndefined = a => typeof a === 'undefined';
 
+// contexts plugin
+const contexts = {
+  name: schema => name => schema.withContext({
+    name: name
+  })
+};
+
 // basics plugin
 const basics = {
   equal: schema => expect => schema.check(value => {
@@ -63,8 +70,8 @@ const types = {
 // structures plugin
 const structures = {
   items: schema => itemSchema => schema.then(value => {
-    return value.map(item => {
-      return itemSchema.validate(item);
+    return value.map((item, index) => {
+      return itemSchema.name(schema.context.name + '[' + index + ']').validate(item);
     });
   }),
   field: schema => (key, valueSchema, requiredIf) => schema.then(value => {
@@ -73,9 +80,9 @@ const structures = {
     }
     const v = value[key];
     return Object.assign({}, value, {
-      [key]: valueSchema.validate(v)
+      [key]: valueSchema.name(schema.context.name + '.' + key).validate(v)
     });
   })
 };
 
-module.exports = [basics, types, structures];
+module.exports = [contexts, basics, types, structures];

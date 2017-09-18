@@ -1,6 +1,19 @@
 const SV = require('../src/index.js');
 const chai = require('chai');
 const assert = chai.assert;
+const verbose = process.argv[3] === '-v'; // npm test -- -v
+
+const throws = f => {
+  let value = null;
+  try {
+    value = f();
+  } catch (e) {
+    verbose && console.log('      ' + e.message);
+    return;
+  }
+  throw new Error('unexpectedly succeeded: ' + JSON.stringify(value, null, 2));
+}
+
 const sv = SV({
   isHello: schema => _ => schema.check(value => {
     if (value !== 'hello') {
@@ -8,19 +21,12 @@ const sv = SV({
     }
   })
 });
-const throws = f => {
-  let value = null;
-  try {
-    value = f();
-  } catch (e) {
-    console.log('      ' + e.message);
-    return;
-  }
-  throw new Error('unexpectedly succeeded: ' + JSON.stringify(value, null, 2));
-}
 
 describe('schema-validator', function() {
   describe('#validate()', function() {
+    afterEach(function() {
+      verbose && console.log();
+    });
     it('should validate number', function() {
       assert.equal(0, sv.number().validate(0));
       assert.equal(1, sv.number().validate(1));
@@ -51,7 +57,7 @@ describe('schema-validator', function() {
       throws(() => sv.array().items(sv.number().min(3)).validate([5, 2, 4]));
     });
     it('should validate object', function() {
-      const schema = sv.object()
+      const schema = sv.object().name('options')
         .field('a', sv.number().then(v => v * 2))
         .field('b', sv.string().then(v => v.toUpperCase()))
         .field('c', sv.array().items(sv.number()))
@@ -59,6 +65,7 @@ describe('schema-validator', function() {
         .field('e', sv.boolean().default(true))
         .field('f', sv.number(), o => o.e)
         .field('g', sv.number().default(100), o => o.e)
+
       assert.deepEqual({
         a: 2,
         b: 'FOO',
