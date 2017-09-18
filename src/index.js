@@ -5,11 +5,15 @@ const init = (plugins, _validate) => {
   const schema = {};
   schema._plugins = plugins;
   schema._validate = _validate || (value => value);
+  schema.context = {
+    name: 'value'
+  };
   schema.init = v => init(plugins, v);
   schema.then = then(schema);
   schema.next = next(schema);
   schema.check = check(schema);
   schema.validate = validate(schema);
+  schema.reject = reject;
   addPlugins(schema, plugins);
   return schema;
 };
@@ -32,11 +36,19 @@ const addPlugin = schema => plugin => {
 }
 
 // validate
+class SchemaValidationError {
+  constructor(message) {
+    this.message = message;
+  }
+}
+const reject = message => {
+  return new SchemaValidationError(message);
+};
 const initialContext = {};
 const validate = schema => value => {
   var newValue = schema._validate(value, initialContext);
-  if (newValue instanceof Error) {
-    throw newValue;
+  if (newValue instanceof SchemaValidationError) {
+    throw makeError(schema.context.name, newValue.message, value);
   }
   if (newValue && newValue._validate) {
     return validate(newValue)(value);
@@ -45,9 +57,13 @@ const validate = schema => value => {
 };
 
 // conversion
+const makeError = (name, message, value) => {
+  value = JSON.stringify(value, null, 2);
+  return new Error(name + ' ' + message + ', but got ' + value);
+};
 const then = schema => f => schema.init((value, context) => {
   const newValue = schema._validate(value, context);
-  if (newValue instanceof Error) {
+  if (newValue instanceof SchemaValidationError) {
     return newValue;
   }
   return f(newValue, context);
@@ -57,7 +73,11 @@ const next = schema => nextSchema => schema.then(value => {
 });
 const check = schema => f => schema.then(value => {
   const message = f(value);
-  return message ? new Error(message) : value;
+  if (message) {
+    return reject(message);
+  } else {
+    return value;
+  }
 });
 
 module.exports = userPlugin => {

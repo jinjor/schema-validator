@@ -6,31 +6,31 @@ const isUndefined = a => typeof a === 'undefined';
 const basics = {
   equal: schema => expect => schema.check(value => {
     if (expect !== value) {
-      return value + ' should be equal to ' + expected;
+      return 'should be equal to ' + expected;
     }
   }),
   lt: schema => limit => schema.check(value => {
     if (value >= limit) {
-      return value + ' should be less than ' + limit;
+      return 'should be less than ' + limit;
     }
   }),
   gt: schema => limit => schema.check(value => {
     if (value <= limit) {
-      return value + ' should be greater than ' + limit;
+      return 'should be greater than ' + limit;
     }
   }),
   min: schema => limit => schema.check(value => {
     if (value < limit) {
-      return value + ' should not be less than ' + limit;
+      return 'should not be less than ' + limit;
     }
   }),
   max: schema => limit => schema.check(value => {
     if (value > limit) {
-      return value + ' should not be greater than ' + limit;
+      return 'should not be greater than ' + limit;
     }
   }),
   required: schema => _ => schema.init(value => {
-    return !isUndefined(value) ? schema.validate(value) : new Error(value + ' is required')
+    return !isUndefined(value) ? schema.validate(value) : schema.reject('is required');
   }),
   default: schema => defaultValue => schema.init(value => {
     return !isUndefined(value) ? schema.validate(value) : defaultValue
@@ -41,7 +41,7 @@ const basics = {
 const types = {
   typeOf: schema => typeName => schema.check(value => {
     if (typeof value !== typeName) {
-      return value + ' is not a ' + typeName;
+      return 'should be a ' + typeName;
     }
   }),
   boolean: schema => _ => schema.next(schema.typeOf('boolean')),
@@ -51,12 +51,12 @@ const types = {
   object: schema => _ => schema.typeOf('object'),
   integer: schema => _ => schema.check(value => {
     if (value % 1 !== 0) {
-      return value + ' is not an integer ';
+      return 'should be an integer';
     }
   }),
   array: schema => _ => schema.check(value => {
     if (isUndefined(value.length)) {
-      return value + ' is not an array';
+      return 'should be an array';
     }
   }),
 };

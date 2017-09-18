@@ -13,7 +13,7 @@ const throws = f => {
     const value = f();
     assert.fail('unexpectedly succeeded: ' + JSON.stringify(value, null, 2));
   } catch (e) {
-    // console.log('      ' + e.message);
+    console.log('      ' + e.message);
   }
 }
 
