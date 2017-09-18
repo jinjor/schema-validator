@@ -54,12 +54,12 @@ const validate = schema => value => {
   }
   return newValue;
 };
-
-// conversion
 const makeError = (name, message, value) => {
   value = JSON.stringify(value, null, 2);
   return new Error(name + ' ' + message + ', but got ' + value);
 };
+
+// conversion
 const withContext = schema => additional => {
   return schema.init(schema._validate, Object.assign({}, schema.context, additional || {}));
 };
@@ -76,13 +76,8 @@ const then = schema => f => schema.init(value => {
 const next = schema => nextSchema => schema.then(value => {
   return nextSchema.validate(value);
 });
-const check = schema => f => schema.then(value => {
-  const message = f(value);
-  if (message) {
-    return schema.reject(message);
-  } else {
-    return value;
-  }
+const check = schema => (f, message) => schema.then(value => {
+  return f(value) ? value : schema.reject(message);
 });
 
 module.exports = userPlugin => {

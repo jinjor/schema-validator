@@ -15,11 +15,9 @@ const throws = f => {
 }
 
 const sv = SV({
-  isHello: schema => _ => schema.check(value => {
-    if (value !== 'hello') {
-      return 'should be "hello"';
-    }
-  })
+  isHello: schema => _ => {
+    return schema.check(value => value === 'hello', 'should be "hello"');
+  }
 });
 
 describe('schema-validator', function() {
