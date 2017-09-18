@@ -45,14 +45,20 @@ const types = {
     }
   }),
   boolean: schema => _ => schema.next(schema.typeOf('boolean')),
-  number: schema => _ => schema.next(schema.typeOf('number')),
-  string: schema => _ => schema.next(schema.typeOf('string')),
-  func: schema => _ => schema.next(schema.typeOf('function')),
+  number: schema => _ => schema.typeOf('number'),
+  string: schema => _ => schema.typeOf('string'),
+  func: schema => _ => schema.typeOf('function'),
+  object: schema => _ => schema.typeOf('object'),
+  integer: schema => _ => schema.check(value => {
+    if (value % 1 !== 0) {
+      return value + ' is not an integer ';
+    }
+  }),
 };
 
 // structures plugin
 const structures = {
-  array: schema => itemSchema => schema.next(schema.typeOf('object')).check(value => {
+  array: schema => itemSchema => schema.check(value => {
     if (isUndefined(value.length)) {
       return value + ' is not an array';
     }
@@ -62,7 +68,7 @@ const structures = {
       return itemSchema.validate(item);
     });
   }),
-  object: schema => schemaGenerators => schema.then(value => {
+  fields: schema => schemaGenerators => schema.then(value => {
     return (schemaGenerators || []).reduce((memo, toSchema) => {
       return assign(memo, toSchema(memo).validate(value));
     }, {});

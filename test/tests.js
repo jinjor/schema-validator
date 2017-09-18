@@ -41,13 +41,13 @@ describe('schema-validator', function() {
       assert.throws(() => sv.array().items(sv.number().min(3)).validate([5, 2, 4]));
     });
     it('should validate object', function() {
-      const schema = sv.object([
+      const schema = sv.object().fields([
         _ => sv.field('a', sv.number().then(v => v * 2)),
         _ => sv.field('b', sv.string().then(v => v.toUpperCase())),
         _ => sv.field('c', sv.array().items(sv.number())),
         o => o.c ? sv.field('d', sv.object()) : sv.any(),
         _ => sv.field('e', sv.boolean().default(true)),
-        o => o.e ? sv.object([
+        o => o.e ? sv.object().fields([
           _ => sv.field('f', sv.number()),
           _ => sv.field('g', sv.number().default(100)),
         ]) : sv.any()
