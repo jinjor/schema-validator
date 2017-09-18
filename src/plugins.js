@@ -68,9 +68,9 @@ const structures = {
       return itemSchema.validate(item);
     });
   }),
-  field: schema => (key, valueSchema, condition) => schema.then(value => {
-    if (condition && !condition(value)) {
-      return value;
+  field: schema => (key, valueSchema, requiredIf) => schema.then(value => {
+    if (requiredIf && !requiredIf(value)) {
+      valueSchema = valueSchema.required();
     }
     const v = value[key];
     return assign(value, {
