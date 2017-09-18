@@ -28,23 +28,23 @@ describe('schema-validator', function() {
       assert.throws(() => sv.number().min(0).max(1).validate(-1));
     });
     it('should validate array', function() {
-      assert.deepEqual([], sv.array(sv.number()).validate([]));
+      assert.deepEqual([], sv.array().items(sv.number()).validate([]));
       assert.deepEqual([], sv.array().validate([]));
-      assert.deepEqual([0], sv.array(sv.number()).validate([0]));
-      assert.deepEqual([0], sv.array(sv.number().max(1)).validate([0]));
-      assert.deepEqual([''], sv.array(sv.string()).validate(['']));
+      assert.deepEqual([0], sv.array().items(sv.number()).validate([0]));
+      assert.deepEqual([0], sv.array().items(sv.number().max(1)).validate([0]));
+      assert.deepEqual([''], sv.array().items(sv.string()).validate(['']));
       assert.deepEqual([1], sv.array().validate([1]));
       assert.deepEqual(['', 1], sv.array().validate(['', 1]));
 
-      assert.throws(() => sv.array(sv.number()).validate(['1']));
-      assert.throws(() => sv.array(sv.number()).validate(['1', 2]));
-      assert.throws(() => sv.array(sv.number().min(3)).validate([5, 2, 4]));
+      assert.throws(() => sv.array().items(sv.number()).validate(['1']));
+      assert.throws(() => sv.array().items(sv.number()).validate(['1', 2]));
+      assert.throws(() => sv.array().items(sv.number().min(3)).validate([5, 2, 4]));
     });
     it('should validate object', function() {
       const schema = sv.object([
         _ => sv.field('a', sv.number().then(v => v * 2)),
         _ => sv.field('b', sv.string().then(v => v.toUpperCase())),
-        _ => sv.field('c', sv.array(sv.number())),
+        _ => sv.field('c', sv.array().items(sv.number())),
         o => o.c ? sv.field('d', sv.object()) : sv.any(),
         _ => sv.field('e', sv.boolean().default(true)),
         o => o.e ? sv.object([

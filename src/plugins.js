@@ -4,20 +4,30 @@ const isUndefined = a => typeof a === 'undefined';
 
 // basics plugin
 const basics = {
-  equal: schema => expect => schema.then(value => {
-    return (expect === value) ? value : new Error(value + ' should be equal to ' + expected);
+  equal: schema => expect => schema.check(value => {
+    if (expect !== value) {
+      return value + ' should be equal to ' + expected;
+    }
   }),
-  lt: schema => limit => schema.then(value => {
-    return (value < limit) ? value : new Error(value + ' should be less than ' + limit);
+  lt: schema => limit => schema.check(value => {
+    if (value >= limit) {
+      return value + ' should be less than ' + limit;
+    }
   }),
-  gt: schema => limit => schema.then(value => {
-    return (value > limit) ? value : new Error(value + ' should be greater than ' + limit);
+  gt: schema => limit => schema.check(value => {
+    if (value <= limit) {
+      return value + ' should be greater than ' + limit;
+    }
   }),
-  min: schema => limit => schema.then(value => {
-    return (value >= limit) ? value : new Error(value + ' should not be less than ' + limit);
+  min: schema => limit => schema.check(value => {
+    if (value < limit) {
+      return value + ' should not be less than ' + limit;
+    }
   }),
-  max: schema => limit => schema.then(value => {
-    return (value <= limit) ? value : new Error(value + ' should not be greater than ' + limit)
+  max: schema => limit => schema.check(value => {
+    if (value > limit) {
+      return value + ' should not be greater than ' + limit;
+    }
   }),
   required: schema => _ => schema.init(value => {
     return !isUndefined(value) ? schema.validate(value) : new Error(value + ' is required')
@@ -29,8 +39,10 @@ const basics = {
 
 // types plugin
 const types = {
-  typeOf: schema => typeName => schema.then(value => {
-    return (typeof value === typeName) ? value : new Error(value + ' is not a ' + typeName)
+  typeOf: schema => typeName => schema.check(value => {
+    if (typeof value !== typeName) {
+      return value + ' is not a ' + typeName;
+    }
   }),
   boolean: schema => _ => schema.next(schema.typeOf('boolean')),
   number: schema => _ => schema.next(schema.typeOf('number')),
@@ -40,17 +52,13 @@ const types = {
 
 // structures plugin
 const structures = {
-  array: schema => itemSchema => schema.then(value => {
-    if (isUndefined(value)) {
-      return value;
-    }
+  array: schema => itemSchema => schema.next(schema.typeOf('object')).check(value => {
     if (isUndefined(value.length)) {
-      return new Error(value + ' is not an array');
+      return value + ' is not an array';
     }
+  }),
+  items: schema => itemSchema => schema.then(value => {
     return value.map(item => {
-      if (isUndefined(itemSchema)) {
-        return item;
-      }
       return itemSchema.validate(item);
     });
   }),

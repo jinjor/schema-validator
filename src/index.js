@@ -8,6 +8,7 @@ const init = (plugins, _validate) => {
   schema.init = v => init(plugins, v);
   schema.then = then(schema);
   schema.next = next(schema);
+  schema.check = check(schema);
   schema.validate = validate(schema);
   addPlugins(schema, plugins);
   return schema;
@@ -15,7 +16,7 @@ const init = (plugins, _validate) => {
 
 const addPlugins = (schema, plugins) => {
   plugins.forEach(addPlugin(schema));
-}
+};
 
 const addPlugin = schema => plugin => {
   Object.keys(plugin).forEach(key => {
@@ -53,6 +54,10 @@ const then = schema => f => schema.init((value, context) => {
 });
 const next = schema => nextSchema => schema.then(value => {
   return nextSchema.validate(value);
+});
+const check = schema => f => schema.then(value => {
+  const message = f(value);
+  return message ? new Error(message) : value;
 });
 
 module.exports = options => {
