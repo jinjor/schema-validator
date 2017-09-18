@@ -45,20 +45,27 @@ describe('schema-validator', function() {
         _ => sv.field('a', sv.number().then(v => v * 2)),
         _ => sv.field('b', sv.string().then(v => v.toUpperCase())),
         _ => sv.field('c', sv.array(sv.number())),
-        o => (o.c.length > 0) ? sv.field('d', sv.object()) : sv.any(),
-        _ => sv.field('e', sv.boolean().default(false)),
+        o => o.c ? sv.field('d', sv.object()) : sv.any(),
+        _ => sv.field('e', sv.boolean().default(true)),
+        o => o.e ? sv.object([
+          _ => sv.field('f', sv.number()),
+          _ => sv.field('g', sv.number().default(100)),
+        ]) : sv.any()
       ]);
       assert.deepEqual({
         a: 2,
         b: 'FOO',
         c: [10, 20, 30],
         d: {},
-        e: false
+        e: true,
+        f: 10,
+        g: 100
       }, schema.validate({
         a: 1,
         b: 'foo',
         c: [10, 20, 30],
-        d: {}
+        d: {},
+        f: 10
       }));
     });
     it('should validate required', function() {

@@ -4,13 +4,27 @@ const isUndefined = a => typeof a === 'undefined';
 
 // basics plugin
 const basics = {
-  equal: schema => expect => schema.then(value => (expect === value) ? value : new Error(value + ' should be equal to ' + expected)),
-  lt: schema => limit => schema.then(value => (value < limit) ? value : new Error(value + ' should be less than ' + limit)),
-  gt: schema => limit => schema.then(value => (value > limit) ? value : new Error(value + ' should be greater than ' + limit)),
-  min: schema => limit => schema.then(value => (value >= limit) ? value : new Error(value + ' should not be less than ' + limit)),
-  max: schema => limit => schema.then(value => (value <= limit) ? value : new Error(value + ' should not be greater than ' + limit)),
-  required: schema => _ => schema.init(value => !isUndefined(value) ? schema.validate(value) : new Error(value + ' is required')),
-  default: schema => defaultValue => schema.init(value => !isUndefined(value) ? schema.validate(value) : defaultValue),
+  equal: schema => expect => schema.then(value => {
+    return (expect === value) ? value : new Error(value + ' should be equal to ' + expected);
+  }),
+  lt: schema => limit => schema.then(value => {
+    return (value < limit) ? value : new Error(value + ' should be less than ' + limit);
+  }),
+  gt: schema => limit => schema.then(value => {
+    return (value > limit) ? value : new Error(value + ' should be greater than ' + limit);
+  }),
+  min: schema => limit => schema.then(value => {
+    return (value >= limit) ? value : new Error(value + ' should not be less than ' + limit);
+  }),
+  max: schema => limit => schema.then(value => {
+    return (value <= limit) ? value : new Error(value + ' should not be greater than ' + limit)
+  }),
+  required: schema => _ => schema.init(value => {
+    return !isUndefined(value) ? schema.validate(value) : new Error(value + ' is required')
+  }),
+  default: schema => defaultValue => schema.init(value => {
+    return !isUndefined(value) ? schema.validate(value) : defaultValue
+  }),
 };
 
 // types plugin
