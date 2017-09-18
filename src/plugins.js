@@ -35,6 +35,22 @@ const basics = {
       return 'should not be greater than ' + limit;
     }
   }),
+  positive: schema => includingZero => {
+    return includingZero ? schema.min(0) : schema.gt(0);
+  },
+  negative: schema => includingZero => {
+    return includingZero ? schema.max(0) : schema.lt(0);
+  },
+  minLength: schema => limit => schema.check(value => {
+    if (value.length < limit) {
+      return '.length should not be less than ' + limit;
+    }
+  }),
+  maxLength: schema => limit => schema.check(value => {
+    if (value.length > limit) {
+      return '.length should not be greater than ' + limit;
+    }
+  }),
   required: schema => _ => schema.init(value => {
     return !isUndefined(value) ? schema.validate(value) : schema.reject('is required');
   }),
@@ -47,7 +63,13 @@ const basics = {
 const types = {
   typeOf: schema => typeName => schema.check(value => {
     if (typeof value !== typeName) {
-      return 'should be a ' + typeName;
+      return 'should be type of ' + typeName;
+    }
+  }),
+  instanceOf: schema => (constructorFunc, name) => schema.check(value => {
+    if (!(value instanceof constructorFunc)) {
+      name = name || constructorFunc.name || 'different class';
+      return 'should be instance of ' + name;
     }
   }),
   boolean: schema => _ => schema.next(schema.typeOf('boolean')),
@@ -55,6 +77,7 @@ const types = {
   string: schema => _ => schema.typeOf('string'),
   func: schema => _ => schema.typeOf('function'),
   object: schema => _ => schema.typeOf('object'),
+  date: schema => _ => schema.instanceOf(Date),
   integer: schema => _ => schema.check(value => {
     if (value % 1 !== 0) {
       return 'should be an integer';
@@ -64,7 +87,7 @@ const types = {
     if (isUndefined(value.length)) {
       return 'should be an array';
     }
-  }),
+  })
 };
 
 // structures plugin
@@ -84,5 +107,9 @@ const structures = {
     });
   })
 };
+
+// TODO: possible APIs
+// mail, uri, alphanum, regex, guid, hex, uppercase, lowercase
+// replace, trim
 
 module.exports = [contexts, basics, types, structures];
