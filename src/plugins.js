@@ -1,5 +1,4 @@
 // utility
-const assign = (obj, overrides) => Object.assign({}, obj, overrides);
 const isUndefined = a => typeof a === 'undefined';
 
 // basics plugin
@@ -73,7 +72,7 @@ const structures = {
       valueSchema = valueSchema.required();
     }
     const v = value[key];
-    return assign(value, {
+    return Object.assign({}, value, {
       [key]: valueSchema.validate(v)
     });
   })

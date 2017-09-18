@@ -9,12 +9,14 @@ const sv = SV({
   })
 });
 const throws = f => {
+  let value = null;
   try {
-    const value = f();
-    assert.fail('unexpectedly succeeded: ' + JSON.stringify(value, null, 2));
+    value = f();
   } catch (e) {
     console.log('      ' + e.message);
+    return;
   }
+  throw new Error('unexpectedly succeeded: ' + JSON.stringify(value, null, 2));
 }
 
 describe('schema-validator', function() {
