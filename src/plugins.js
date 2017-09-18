@@ -54,31 +54,29 @@ const types = {
       return value + ' is not an integer ';
     }
   }),
-};
-
-// structures plugin
-const structures = {
-  array: schema => itemSchema => schema.check(value => {
+  array: schema => _ => schema.check(value => {
     if (isUndefined(value.length)) {
       return value + ' is not an array';
     }
   }),
+};
+
+// structures plugin
+const structures = {
   items: schema => itemSchema => schema.then(value => {
     return value.map(item => {
       return itemSchema.validate(item);
     });
   }),
-  fields: schema => schemaGenerators => schema.then(value => {
-    return (schemaGenerators || []).reduce((memo, toSchema) => {
-      return assign(memo, toSchema(memo).validate(value));
-    }, {});
-  }),
-  field: schema => (key, valueSchema) => schema.then(value => {
+  field: schema => (key, valueSchema, condition) => schema.then(value => {
+    if (condition && !condition(value)) {
+      return value;
+    }
     const v = value[key];
-    return {
+    return assign(value, {
       [key]: valueSchema.validate(v)
-    };
-  }),
+    });
+  })
 };
 
 module.exports = [basics, types, structures];

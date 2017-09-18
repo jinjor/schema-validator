@@ -61,6 +61,5 @@ const check = schema => f => schema.then(value => {
 });
 
 module.exports = userPlugin => {
-  userPlugin = userPlugin || {};
-  return init(predefinedPlugins.concat([userPlugin]));
+  return init(predefinedPlugins.concat([userPlugin || {}]));
 };
