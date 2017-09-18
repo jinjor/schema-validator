@@ -17,7 +17,7 @@ const throws = f => {
 const sv = SV({
   isHello: schema => _ => schema.check(value => {
     if (value !== 'hello') {
-      return 'value is not hello :(';
+      return 'should be "hello"';
     }
   })
 });
