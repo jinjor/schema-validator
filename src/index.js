@@ -7,6 +7,7 @@ const init = (plugins, _validate) => {
   schema._validate = _validate || (value => value);
   schema.init = v => init(plugins, v);
   schema.then = then(schema);
+  schema.next = next(schema);
   schema.validate = validate(schema);
   addPlugins(schema, plugins);
   return schema;
@@ -49,6 +50,9 @@ const then = schema => f => schema.init((value, context) => {
     return newValue;
   }
   return f(newValue, context);
+});
+const next = schema => nextSchema => schema.then(value => {
+  return nextSchema.validate(value);
 });
 
 module.exports = options => {

@@ -28,15 +28,14 @@ const basics = {
 };
 
 // types plugin
-const checkType = (typeName, value) => {
-  return (typeof value === typeName) ? value : new Error(value + ' is not a ' + typeName)
-}
 const types = {
-  typeOf: schema => typeName => schema.then(value => checkType(typeName, value)),
-  boolean: schema => _ => schema.then(value => checkType('boolean', value)),
-  number: schema => _ => schema.then(value => checkType('number', value)),
-  string: schema => _ => schema.then(value => checkType('string', value)),
-  func: schema => _ => schema.then(value => checkType('function', value)),
+  typeOf: schema => typeName => schema.then(value => {
+    return (typeof value === typeName) ? value : new Error(value + ' is not a ' + typeName)
+  }),
+  boolean: schema => _ => schema.next(schema.typeOf('boolean')),
+  number: schema => _ => schema.next(schema.typeOf('number')),
+  string: schema => _ => schema.next(schema.typeOf('string')),
+  func: schema => _ => schema.next(schema.typeOf('function')),
 };
 
 // structures plugin
