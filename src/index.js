@@ -60,9 +60,7 @@ const check = schema => f => schema.then(value => {
   return message ? new Error(message) : value;
 });
 
-module.exports = options => {
-  options = options || {
-    plugins: []
-  };
-  return init(predefinedPlugins.concat(options.plugins));
+module.exports = userPlugin => {
+  userPlugin = userPlugin || {};
+  return init(predefinedPlugins.concat([userPlugin]));
 };

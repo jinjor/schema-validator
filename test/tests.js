@@ -2,11 +2,11 @@ const SV = require('../src/index.js');
 const chai = require('chai');
 const assert = chai.assert;
 const sv = SV({
-  plugins: [{
-    isHello: schema => _ => schema.then(value => {
-      return (value === 'hello') ? value : new Error('value is not hello :(');
-    }),
-  }]
+  isHello: schema => _ => schema.check(value => {
+    if (value !== 'hello') {
+      return 'value is not hello :(';
+    }
+  })
 });
 
 describe('schema-validator', function() {
