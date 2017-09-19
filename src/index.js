@@ -1,7 +1,9 @@
 const predefinedPlugins = require('./plugins.js');
+const common = require('./common.js');
+const SchemaValidationError = common.SchemaValidationError;
+const reject = common.reject;
 
 // schema object
-const reject = message => new SchemaValidationError(message);
 const createClass = () => class Schema {
   constructor(validators, context) {
     this._validators = validators || [];
@@ -52,17 +54,6 @@ const validateHelp = (validators, i, name, originalValue, value) => {
     throw newValue.toError(name, originalValue);
   }
   return validateHelp(validators, i + 1, name, originalValue, newValue);
-}
-
-// validate
-class SchemaValidationError {
-  constructor(message) {
-    this.message = message;
-  }
-  toError(name, value) {
-    value = JSON.stringify(value, null, 2);
-    return new Error(name + ' ' + this.message + ', but got ' + value);
-  }
 }
 
 // extension
