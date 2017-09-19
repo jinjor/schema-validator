@@ -2,16 +2,17 @@
 const isUndefined = a => typeof a === 'undefined';
 
 const Combinators = {
-  check(f, message) {
+  check(message, f) {
     return this.last({
-      type: 'condition',
-      message: message,
-      f: f,
+      doc: _ => message,
+      validate: value => f(value) ? value : reject(message),
     });
   },
-  block(f, defaultValue) {
-    return this.first(value => {
-      return f(value) ? defaultValue : this.validate(value);
+  block(message, f, defaultValue) {
+    return this.first({
+      doc: _ => message,
+      validate: value => f(value) ? defaultValue : value,
+      defaultValue: defaultValue
     });
   },
 };
@@ -28,19 +29,19 @@ const Contexts = {
 // basics plugin
 const Basics = {
   equal(expect) {
-    return this.check(value => expect === value, 'should be equal to ' + expected);
+    return this.check('should be equal to ' + expected, value => expect === value);
   },
   lt(limit) {
-    return this.check(value => value < limit, 'should be less than ' + limit);
+    return this.check('should be less than ' + limit, value => value < limit);
   },
   gt(limit) {
-    return this.check(value => value > limit, 'should be greater than ' + limit);
+    return this.check('should be greater than ' + limit, value => value > limit);
   },
   min(limit) {
-    return this.check(value => value >= limit, 'should not be less than ' + limit);
+    return this.check('should not be less than ' + limit, value => value >= limit);
   },
   max(limit) {
-    return this.check(value => value <= limit, 'should not be greater than ' + limit);
+    return this.check('should not be greater than ' + limit, value => value <= limit);
   },
   positive(includingZero) {
     return includingZero ? this.min(0) : this.gt(0);
@@ -49,28 +50,28 @@ const Basics = {
     return includingZero ? this.max(0) : this.lt(0);
   },
   minLength(limit) {
-    return this.check(value => value.length >= limit, '.length should not be less than ' + limit);
+    return this.check('.length should not be less than ' + limit, value => value.length >= limit);
   },
   maxLength(limit) {
-    return this.check(value => value.length <= limit, '.length should not be greater than ' + limit);
+    return this.check('.length should not be greater than ' + limit, value => value.length <= limit);
   },
   required() {
-    return this.block(value => isUndefined(value), this.reject('is required'));
+    return this.block('is required', value => isUndefined(value), this.reject('is required'));
   },
   default (defaultValue) {
-    return this.block(value => isUndefined(value), defaultValue);
+    return this.block('is optional (default: ' + defaultValue + ')', value => isUndefined(value), defaultValue);
   },
 };
 
 const Types = {
   typeOf(typeName, an) {
     const a = an ? 'an' : 'a';
-    return this.check(value => typeof value === typeName, `should be ${a} ${typeName}`);
+    return this.check(`should be ${a} ${typeName}`, value => typeof value === typeName);
   },
   instanceOf(constructorFunc, name) {
     return this.check(
-      value => value instanceof constructorFunc,
-      'should be instance of ' + (name || constructorFunc.name || 'different class')
+      'should be instance of ' + (name || constructorFunc.name || 'different class'),
+      value => value instanceof constructorFunc
     );
   },
   boolean() {
@@ -92,13 +93,13 @@ const Types = {
     return this.instanceOf(Date);
   },
   integer() {
-    return this.check(value => value % 1 === 0, 'should be an integer');
+    return this.check('should be an integer', value => value % 1 === 0);
   },
   array() {
-    return this.check(value => Array.isArray(value), 'should be an array');
+    return this.check('should be an array', value => Array.isArray(value));
   },
   arrayLike() {
-    return this.check(value => typeof value.length === 'number', 'should be an array-like object');
+    return this.check('should be an array-like object', value => typeof value.length === 'number');
   },
 }
 
@@ -107,19 +108,27 @@ const Types = {
 const Structures = {
   items(itemSchema) {
     return this.last({
-      type: 'collection',
-      toKeys: value => value.map((_, index) => index),
-      itemSchema: itemSchema,
-      toItemName: key => this.context.name + '[' + key + ']'
+      doc: indent => 'each item:\n' + itemSchema.doc(indent + '  '),
+      validate: value => {
+        return value.map((item, index) => {
+          const name = this.context.name + '[' + index + ']';
+          return itemSchema.name(name).validate(item);
+        });
+      }
     });
   },
   field(key, valueSchema, requiredIf) {
     return this.last({
-      type: 'field',
-      key: key,
-      valueSchema: valueSchema,
-      parentName: this.context.name,
-      requiredIf: requiredIf
+      doc: indent => 'field ' + key + ':\n' + valueSchema.doc(indent + '  '),
+      validate: value => {
+        if (requiredIf && !requiredIf(value)) {
+          valueSchema = valueSchema.required();
+        }
+        const v = value[key];
+        return Object.assign({}, value, {
+          [key]: valueSchema.name(this.context.name + '.' + key).validate(v)
+        });
+      }
     });
   }
 };

@@ -20,7 +20,7 @@ const throws = f => {
 
 const sv = SV({
   isHello() {
-    return this.check(value => value === 'hello', 'should be "hello"');
+    return this.check('should be "hello"', value => value === 'hello');
   }
 });
 

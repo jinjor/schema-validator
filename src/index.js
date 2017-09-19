@@ -18,17 +18,15 @@ const createClass = () => class Schema {
   reject(message) {
     return reject(message);
   }
-  first(f) {
-    return this.init([{
-      f: f
-    }].concat(this._validators));
+  first(validator) {
+    return this.init([validator].concat(this._validators));
   }
   last(validator) {
     return this.init(this._validators.concat([validator]));
   }
   then(f) {
     return this.last({
-      f: f
+      validate: f
     });
   }
   validate(value) {
@@ -36,18 +34,11 @@ const createClass = () => class Schema {
   }
   doc(indent) {
     indent = indent || '';
-    return this._validators.map(validator => {
-      if (validator.type === 'condition') {
-        return validator.message;
-      }
-      if (validator.type === 'collection') {
-        return 'each item:\n' + validator.itemSchema.doc(indent + '  ');
-      }
-      if (validator.type === 'field') {
-        return 'field ' + validator.key + ':\n' + validator.valueSchema.doc(indent + '  ');
-      }
-      return validator.message;
-    }).filter(mes => !!mes).map(mes => indent + '- ' + mes).join('\n');
+    return this._validators
+      .filter(validator => validator.doc)
+      .map(validator => validator.doc(indent))
+      .map(mes => indent + '- ' + mes)
+      .join('\n');
   }
 }
 
@@ -56,39 +47,12 @@ const validateHelp = (validators, i, name, originalValue, value) => {
     return value;
   }
   const validator = validators[i];
-  const newValue =
-    (validator.type === 'condition') ? validateCondition(validator, value) :
-    (validator.type === 'collection') ? validateCollection(validator, value) :
-    (validator.type === 'field') ? validateField(validator, value) :
-    validator.f(value);
+  const newValue = validator.validate(value);
   if (newValue instanceof SchemaValidationError) {
     throw newValue.toError(name, originalValue);
   }
   return validateHelp(validators, i + 1, name, originalValue, newValue);
 }
-
-const validateCondition = (validator, value) => {
-  return validator.f(value) ? value : reject(validator.message);
-};
-const validateCollection = (validator, value) => {
-  return validator.toKeys(value).map(key => {
-    const item = value[key];
-    const name = validator.toItemName(key);
-    return validator.itemSchema.name(name).validate(item);
-  });
-}
-const validateField = (validator, value) => {
-  valueSchema = validator.valueSchema;
-  if (validator.requiredIf && !validator.requiredIf(value)) {
-    valueSchema = valueSchema.required();
-  }
-  const key = validator.key;
-  const v = value[key];
-  return Object.assign({}, value, {
-    [key]: valueSchema.name(validator.parentName + '.' + key).validate(v)
-  });
-}
-
 
 // validate
 class SchemaValidationError {
