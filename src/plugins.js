@@ -2,21 +2,19 @@
 const isUndefined = a => typeof a === 'undefined';
 
 const Combinators = {
-  next(nextSchema) {
-    return this.then(value => {
-      return nextSchema.validate(value);
-    });
-  },
   check(f, message) {
-    return this.then(value => {
-      return f(value) ? value : this.reject(message);
+    return this.then2({
+      message: message,
+      f: value => {
+        return f(value) ? value : this.reject(message);
+      }
     });
   },
   block(f, defaultValue) {
     return this.first(value => {
       return f(value) ? defaultValue : this.validate(value);
     });
-  }
+  },
 };
 
 // contexts plugin
@@ -76,7 +74,7 @@ const Types = {
     );
   },
   boolean() {
-    return this.next(this.typeOf('boolean'));
+    return this.typeOf('boolean');
   },
   number() {
     return this.typeOf('number');
@@ -108,10 +106,11 @@ const Types = {
 // structures plugin
 const Structures = {
   items(itemSchema) {
-    return this.then(value => {
-      return value.map((item, index) => {
-        return itemSchema.name(this.context.name + '[' + index + ']').validate(item);
-      });
+    return this.then2({
+      type: 'collection',
+      toKeys: value => value.map((_, index) => index),
+      itemSchema: itemSchema,
+      toItemName: key => this.context.name + '[' + key + ']'
     });
   },
   field(key, valueSchema, requiredIf) {

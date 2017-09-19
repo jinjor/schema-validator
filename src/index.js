@@ -27,22 +27,41 @@ const createClass = () => class Schema {
       f: f
     }]));
   }
+  then2(validator) {
+    return this.init(this._validators.concat([validator]));
+  }
   validate(value) {
-    // console.log(this._validators);
     return validateHelp(this._validators, 0, this.context.name, value, value)
+  }
+  doc(indent) {
+    indent = indent || '';
+    return this._validators.map(validator => {
+      if (validator.type === 'collection') {
+        return 'each item should satisfy:\n' + validator.itemSchema.doc(indent + '  ');
+      }
+      return validator.message || 'should be something';
+    }).map(mes => indent + '- ' + mes).join('\n');
   }
 }
 
-const validateHelp = (varidators, i, name, originalValue, value) => {
-  if (i >= varidators.length) {
+const validateHelp = (validators, i, name, originalValue, value) => {
+  if (i >= validators.length) {
     return value;
   }
-  const varidator = varidators[i];
-  const newValue = varidator.f(value);
+  const validator = validators[i];
+  const newValue = (validator.type === 'collection') ? validateCollection(validator, value) : validator.f(value);
   if (newValue instanceof SchemaValidationError) {
     throw newValue.toError(name, originalValue);
   }
-  return validateHelp(varidators, i + 1, name, originalValue, newValue);
+  return validateHelp(validators, i + 1, name, originalValue, newValue);
+}
+
+const validateCollection = (validator, value) => {
+  return validator.toKeys(value).map(key => {
+    const item = value[key];
+    const name = validator.toItemName(key);
+    return validator.itemSchema.name(name).validate(item);
+  });
 }
 
 

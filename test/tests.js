@@ -61,7 +61,7 @@ describe('schema-validator', function() {
       .field('d', sv.object(), o => o.c.length > 3)
       .field('e', sv.boolean().default(true))
       .field('f', sv.number(), o => o.e)
-      .field('g', sv.number().default(100), o => o.e)
+      .field('g', sv.number().default(100), o => o.e);
 
     assert.deepEqual({
       a: 2,
@@ -96,5 +96,10 @@ describe('schema-validator', function() {
   it('should read custom plugin', function() {
     assert.equal('hello', sv.isHello().validate('hello'));
     throws(() => sv.isHello().validate('bye'));
+  });
+  it('should generate doc', function() {
+    console.log(sv.number().doc());
+    console.log();
+    console.log(sv.array().items(sv.number().lt(100)).doc());
   });
 });
