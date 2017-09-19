@@ -3,11 +3,10 @@ const isUndefined = a => typeof a === 'undefined';
 
 const Combinators = {
   check(f, message) {
-    return this.then2({
+    return this.last({
+      type: 'condition',
       message: message,
-      f: value => {
-        return f(value) ? value : this.reject(message);
-      }
+      f: f,
     });
   },
   block(f, defaultValue) {
@@ -107,7 +106,7 @@ const Types = {
 // structures plugin
 const Structures = {
   items(itemSchema) {
-    return this.then2({
+    return this.last({
       type: 'collection',
       toKeys: value => value.map((_, index) => index),
       itemSchema: itemSchema,
@@ -115,14 +114,12 @@ const Structures = {
     });
   },
   field(key, valueSchema, requiredIf) {
-    return this.then(value => {
-      if (requiredIf && !requiredIf(value)) {
-        valueSchema = valueSchema.required();
-      }
-      const v = value[key];
-      return Object.assign({}, value, {
-        [key]: valueSchema.name(this.context.name + '.' + key).validate(v)
-      });
+    return this.last({
+      type: 'field',
+      key: key,
+      valueSchema: valueSchema,
+      parentName: this.context.name,
+      requiredIf: requiredIf
     });
   }
 };

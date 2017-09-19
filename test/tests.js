@@ -3,12 +3,16 @@ const chai = require('chai');
 const assert = chai.assert;
 const verbose = process.argv[3] === '-v'; // npm test -- -v
 
+const log = verbose ? function() {
+  console.log.apply(console, arguments);
+} : () => {};
+
 const throws = f => {
   let value = null;
   try {
     value = f();
   } catch (e) {
-    verbose && console.log('    ' + e.message);
+    log('    ' + e.message);
     return;
   }
   throw new Error('unexpectedly succeeded: ' + JSON.stringify(value, null, 2));
@@ -22,7 +26,7 @@ const sv = SV({
 
 describe('schema-validator', function() {
   afterEach(function() {
-    verbose && console.log();
+    log();
   });
   it('should validate number', function() {
     assert.equal(0, sv.number().validate(0));
@@ -98,8 +102,15 @@ describe('schema-validator', function() {
     throws(() => sv.isHello().validate('bye'));
   });
   it('should generate doc', function() {
-    console.log(sv.number().doc());
-    console.log();
-    console.log(sv.array().items(sv.number().lt(100)).doc());
+    const indent = '    ';
+    log(sv.number().doc(indent));
+    log();
+    log(sv.array().items(sv.number().lt(100)).doc(indent));
+    log();
+    log(sv.object().name('options')
+      .field('a', sv.number().then(v => v * 2))
+      .field('b', sv.string().then(v => v.toUpperCase()))
+      .doc(indent)
+    );
   });
 });
