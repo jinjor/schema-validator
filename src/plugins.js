@@ -2,7 +2,9 @@ const common = require('./common.js');
 const SchemaValidationError = common.SchemaValidationError;
 const reject = common.reject;
 
-const isUndefined = a => typeof a === 'undefined';
+function isUndefined(a) {
+  return typeof a === 'undefined';
+}
 
 const Combinators = {
   check(checker) {

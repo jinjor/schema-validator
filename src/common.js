@@ -8,7 +8,9 @@ class SchemaValidationError {
   }
 }
 
-const reject = message => new SchemaValidationError(message);
+function reject(message) {
+  return new SchemaValidationError(message);
+}
 
 module.exports = {
   SchemaValidationError: SchemaValidationError,

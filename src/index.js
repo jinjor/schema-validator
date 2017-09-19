@@ -44,7 +44,7 @@ const createClass = () => class Schema {
   }
 }
 
-const validateHelp = (validators, i, name, originalValue, value) => {
+function validateHelp(validators, i, name, originalValue, value) {
   if (i >= validators.length) {
     return value;
   }
@@ -56,11 +56,11 @@ const validateHelp = (validators, i, name, originalValue, value) => {
   return validateHelp(validators, i + 1, name, originalValue, newValue);
 }
 
-// extension
-const addPlugins = (schema, plugins) => {
-  plugins.forEach(addPlugin(schema));
-};
-const addPlugin = schema => plugin => {
+function addPlugins(schema, plugins) {
+  plugins.forEach(plugin => addPlugin(schema, plugin));
+}
+
+function addPlugin(schema, plugin) {
   Object.keys(plugin).forEach(key => {
     if (schema[key]) {
       throw new Error(`PluginError: Function ${key} is already defined.`);
