@@ -26,23 +26,13 @@ class Schema {
       return f(newValue);
     });
   }
-  next(nextSchema) {
-    return this.then(value => {
-      return nextSchema.validate(value);
-    });
-  }
-  check(f, message) {
-    return this.then(value => {
-      return f(value) ? value : this.reject(message);
-    });
-  }
   reject(message) {
     return new SchemaValidationError(message);
   }
   validate(value) {
     var newValue = this._validate(value);
     if (newValue instanceof SchemaValidationError) {
-      throw makeError(this.context.name, newValue.message, value);
+      throw newValue.toError(this.context.name, value);
     }
     if (newValue instanceof Schema) {
       return validate(newValue)(value);
@@ -56,11 +46,11 @@ class SchemaValidationError {
   constructor(message) {
     this.message = message;
   }
+  toError(name, value) {
+    value = JSON.stringify(value, null, 2);
+    return new Error(name + ' ' + this.message + ', but got ' + value);
+  }
 }
-const makeError = (name, message, value) => {
-  value = JSON.stringify(value, null, 2);
-  return new Error(name + ' ' + message + ', but got ' + value);
-};
 
 // extension
 const addPlugins = (schema, plugins) => {

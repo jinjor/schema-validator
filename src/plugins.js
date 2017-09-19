@@ -1,6 +1,19 @@
 // utility
 const isUndefined = a => typeof a === 'undefined';
 
+const Combinators = {
+  next(nextSchema) {
+    return this.then(value => {
+      return nextSchema.validate(value);
+    });
+  },
+  check(f, message) {
+    return this.then(value => {
+      return f(value) ? value : this.reject(message);
+    });
+  }
+};
+
 // contexts plugin
 const Contexts = {
   name(name) {
@@ -8,7 +21,7 @@ const Contexts = {
       name: name
     });
   }
-}
+};
 
 // basics plugin
 const Basics = {
@@ -117,4 +130,4 @@ const Structures = {
 // mail, uri, alphanum, regex, guid, hex, uppercase, lowercase
 // replace, trim
 
-module.exports = [Contexts, Basics, Types, Structures];
+module.exports = [Combinators, Contexts, Basics, Types, Structures];
