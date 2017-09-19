@@ -11,6 +11,11 @@ const Combinators = {
     return this.then(value => {
       return f(value) ? value : this.reject(message);
     });
+  },
+  block(f, defaultValue) {
+    return this.init(value => {
+      return f(value) ? defaultValue : this.validate(value);
+    });
   }
 };
 
@@ -53,14 +58,10 @@ const Basics = {
     return this.check(value => value.length <= limit, '.length should not be greater than ' + limit);
   },
   required() {
-    return this.init(value => {
-      return !isUndefined(value) ? this.validate(value) : this.reject('is required');
-    });
+    return this.block(value => isUndefined(value), this.reject('is required'));
   },
   default (defaultValue) {
-    return this.init(value => {
-      return !isUndefined(value) ? this.validate(value) : defaultValue
-    });
+    return this.block(value => isUndefined(value), defaultValue);
   },
 };
 
