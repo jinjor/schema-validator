@@ -1,7 +1,7 @@
 const predefinedPlugins = require('./plugins.js');
 
 // schema object
-class Schema {
+const createClass = () => class Schema {
   constructor(validate, context) {
     this._validate = validate || (value => value);
     this.context = context || {
@@ -71,6 +71,7 @@ const addPlugin = schema => plugin => {
 
 module.exports = userPlugin => {
   const plugins = predefinedPlugins.concat([userPlugin || {}]);
-  addPlugins(Schema.prototype, plugins);
-  return new Schema();
+  const cls = createClass();
+  addPlugins(cls.prototype, plugins);
+  return new cls();
 };
