@@ -2,7 +2,6 @@ const common = require('./common.js');
 const SchemaValidationError = common.SchemaValidationError;
 const reject = common.reject;
 
-// utility
 const isUndefined = a => typeof a === 'undefined';
 
 const Combinators = {
@@ -20,15 +19,6 @@ const Combinators = {
   },
 };
 
-const checker = (condition, message, isValid) => {
-  return {
-    condition: condition,
-    doc: _ => message,
-    validate: value => isValid(value) ? value : reject(message)
-  };
-};
-
-// contexts plugin
 const Contexts = {
   name(name) {
     return this.withContext({
@@ -37,8 +27,15 @@ const Contexts = {
   }
 };
 
-// basics plugin
-const Basics = {
+const checker = (condition, message, isValid) => {
+  return {
+    condition: condition,
+    doc: _ => message,
+    validate: value => isValid(value) ? value : reject(message)
+  };
+};
+
+const Conditions = {
   truthy() {
     const c = checker(
       'is truthy',
@@ -116,7 +113,10 @@ const Basics = {
       value => value.length <= limit
     );
     return this.check(c);
-  },
+  }
+};
+
+const Requisitions = {
   required() {
     return this.block(
       'is required',
@@ -195,8 +195,6 @@ const Types = {
   },
 }
 
-
-// structures plugin
 const Structures = {
   items(itemSchema) {
     return this.last({
@@ -239,4 +237,11 @@ const Structures = {
 // mail, uri, alphanum, regex, guid, hex, uppercase, lowercase
 // replace, trim
 
-module.exports = [Combinators, Contexts, Basics, Types, Structures];
+module.exports = [
+  Combinators,
+  Contexts,
+  Conditions,
+  Requisitions,
+  Types,
+  Structures
+];
