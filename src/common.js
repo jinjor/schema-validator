@@ -3,8 +3,8 @@ class SchemaValidationError {
     this.message = message;
   }
   toError(name, value) {
-    value = JSON.stringify(value, null, 2);
-    return new Error(name + ' ' + this.message + ', but got ' + value);
+    const stringValue = JSON.stringify(value, null, 2);
+    return new Error(`${name} ${this.message}, but got ${stringValue}`);
   }
 }
 
