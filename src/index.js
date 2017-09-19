@@ -29,20 +29,20 @@ const createClass = () => class Schema {
   }
   validate(value) {
     // console.log(this._validators);
-    return validateHelp(this._validators, 0, this.context.name, value)
+    return validateHelp(this._validators, 0, this.context.name, value, value)
   }
 }
 
-const validateHelp = (varidators, i, name, value) => {
+const validateHelp = (varidators, i, name, originalValue, value) => {
   if (i >= varidators.length) {
     return value;
   }
   const varidator = varidators[i];
   const newValue = varidator.f(value);
   if (newValue instanceof SchemaValidationError) {
-    throw newValue.toError(name);
+    throw newValue.toError(name, originalValue);
   }
-  return validateHelp(varidators, i + 1, name, newValue);
+  return validateHelp(varidators, i + 1, name, originalValue, newValue);
 }
 
 
