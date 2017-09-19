@@ -1,27 +1,71 @@
 const predefinedPlugins = require('./plugins.js');
 
 // schema object
-const init = (plugins, _validate, context) => {
-  const schema = {};
-  schema._validate = _validate || (value => value);
-  schema.context = context || {
-    name: 'value'
-  };
-  schema.init = (v, context) => init(plugins, v, context || schema.context);
-  schema.withContext = withContext(schema);
-  schema.then = then(schema);
-  schema.next = next(schema);
-  schema.check = check(schema);
-  schema.validate = validate(schema);
-  schema.reject = reject(schema);
-  addPlugins(schema, plugins);
-  return schema;
+class Schema {
+  constructor(validate, context) {
+    this._validate = validate || (value => value);
+    this.context = context || {
+      name: 'value'
+    };
+  }
+  init(validate, context) {
+    return new Schema(validate, context);
+  }
+  withContext(additional) {
+    return this.init(this._validate, Object.assign({}, this.context, additional || {}));
+  }
+  then(f) {
+    return this.init(value => {
+      const newValue = this._validate(value);
+      if (newValue instanceof SchemaValidationError) {
+        return newValue;
+      }
+      if (newValue instanceof Schema) {
+        return f(newValue.validate(value));
+      }
+      return f(newValue);
+    });
+  }
+  next(nextSchema) {
+    return this.then(value => {
+      return nextSchema.validate(value);
+    });
+  }
+  check(f, message) {
+    return this.then(value => {
+      return f(value) ? value : this.reject(message);
+    });
+  }
+  reject(message) {
+    return new SchemaValidationError(message);
+  }
+  validate(value) {
+    var newValue = this._validate(value);
+    if (newValue instanceof SchemaValidationError) {
+      throw makeError(this.context.name, newValue.message, value);
+    }
+    if (newValue instanceof Schema) {
+      return validate(newValue)(value);
+    }
+    return newValue;
+  }
+}
+
+// validate
+class SchemaValidationError {
+  constructor(message) {
+    this.message = message;
+  }
+}
+const makeError = (name, message, value) => {
+  value = JSON.stringify(value, null, 2);
+  return new Error(name + ' ' + message + ', but got ' + value);
 };
 
+// extension
 const addPlugins = (schema, plugins) => {
   plugins.forEach(addPlugin(schema));
 };
-
 const addPlugin = schema => plugin => {
   Object.keys(plugin).forEach(key => {
     if (schema[key]) {
@@ -31,55 +75,12 @@ const addPlugin = schema => plugin => {
     if (typeof f !== 'function') {
       throw new Error(`PluginError: Plugin ${key} is mulformed. Value should be a function.`);
     }
-    schema[key] = f(schema);
+    schema[key] = f;
   });
 }
 
-// validate
-class SchemaValidationError {
-  constructor(message) {
-    this.message = message;
-  }
-}
-const reject = schema => message => {
-  return new SchemaValidationError(message);
-};
-const validate = schema => value => {
-  var newValue = schema._validate(value);
-  if (newValue instanceof SchemaValidationError) {
-    throw makeError(schema.context.name, newValue.message, value);
-  }
-  if (newValue && newValue._validate) {
-    return validate(newValue)(value);
-  }
-  return newValue;
-};
-const makeError = (name, message, value) => {
-  value = JSON.stringify(value, null, 2);
-  return new Error(name + ' ' + message + ', but got ' + value);
-};
-
-// conversion
-const withContext = schema => additional => {
-  return schema.init(schema._validate, Object.assign({}, schema.context, additional || {}));
-};
-const then = schema => f => schema.init(value => {
-  const newValue = schema._validate(value);
-  if (newValue instanceof SchemaValidationError) {
-    return newValue;
-  }
-  if (newValue && newValue._validate) {
-    return f(newValue.validate(value));
-  }
-  return f(newValue);
-});
-const next = schema => nextSchema => schema.then(value => {
-  return nextSchema.validate(value);
-});
-const check = schema => (f, message) => schema.then(value => {
-  return f(value) ? value : schema.reject(message);
-});
-
 module.exports = userPlugin => {
-  return init(predefinedPlugins.concat([userPlugin || {}]));
+  const plugins = predefinedPlugins.concat([userPlugin || {}]);
+  addPlugins(Schema.prototype, plugins);
+  return new Schema();
 };

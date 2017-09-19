@@ -15,8 +15,8 @@ const throws = f => {
 }
 
 const sv = SV({
-  isHello: schema => _ => {
-    return schema.check(value => value === 'hello', 'should be "hello"');
+  isHello() {
+    return this.check(value => value === 'hello', 'should be "hello"');
   }
 });
 
