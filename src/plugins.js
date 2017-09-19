@@ -7,6 +7,9 @@ const isUndefined = a => typeof a === 'undefined';
 
 const Combinators = {
   check(checker) {
+    if (!checker.condition) {
+      throw new Error('checker must contain "condition"');
+    }
     return this.last(checker);
   },
   block(message, f, defaultValue) {
@@ -37,25 +40,32 @@ const Contexts = {
 // basics plugin
 const Basics = {
   truthy() {
-    return this.check(checker('is truthy', 'should be truthy', value => value));
+    const c = checker('is truthy', 'should be truthy', value => value);
+    return this.check(c);
   },
   falsy() {
-    return this.check(checker('is falsy', 'should be falsy', value => !value));
+    const c = checker('is falsy', 'should be falsy', value => !value);
+    return this.check(c);
   },
   equal(expected) {
-    return this.check(checker('equals to ' + expected, 'should be equal to ' + expected, value => expected === value));
+    const c = checker(`equals to ${expected}`, `should be equal to ${expected}`, value => expected === value);
+    return this.check(c);
   },
   lt(limit) {
-    return this.check(checker('is less than ' + limit, 'should be less than ' + limit, value => value < limit));
+    const c = checker(`is less than ${limit}`, `should be less than ${limit}`, value => value < limit);
+    return this.check(c);
   },
   gt(limit) {
-    return this.check(checker('is greater than ' + limit, 'should be greater than ' + limit, value => value > limit));
+    const c = checker(`is greater than ${limit}`, `should be greater than ${limit}`, value => value > limit);
+    return this.check(c);
   },
   min(limit) {
-    return this.check(checker('is not less than ' + limit, 'should not be less than ' + limit, value => value >= limit));
+    const c = checker(`is not less than ${limit}`, `should not be less than ${limit}`, value => value >= limit);
+    return this.check(c);
   },
   max(limit) {
-    return this.check(checker('is not greater than ' + limit, 'should not be greater than ' + limit, value => value <= limit));
+    const c = checker(`is not greater than ${limit}`, `should not be greater than ${limit}`, value => value <= limit);
+    return this.check(c);
   },
   positive(includingZero) {
     return includingZero ? this.min(0) : this.gt(0);
@@ -64,10 +74,12 @@ const Basics = {
     return includingZero ? this.max(0) : this.lt(0);
   },
   minLength(limit) {
-    return this.check(checker('length is less than ' + limit, 'length should not be less than ' + limit, value => value.length >= limit));
+    const c = checker(`length is less than ${limit}`, `length should not be less than ${limit}`, value => value.length >= limit);
+    return this.check(c);
   },
   maxLength(limit) {
-    return this.check(checker('length is not greater than ' + limit, 'length should not be greater than ' + limit, value => value.length <= limit));
+    const c = checker(`length is not greater than ${limit}`, `length should not be greater than ${limit}`, value => value.length <= limit);
+    return this.check(c);
   },
   required() {
     return this.block('is required', value => isUndefined(value), this.reject('is required'));
@@ -109,13 +121,16 @@ const Types = {
     return this.instanceOf(Date);
   },
   integer() {
-    return this.check(checker('is an integer', 'should be an integer', value => value % 1 === 0));
+    const c = checker('is an integer', 'should be an integer', value => value % 1 === 0);
+    return this.check(c);
   },
   array() {
-    return this.check(checker('is an array', 'should be an array', value => Array.isArray(value)));
+    const c = checker('is an array', 'should be an array', value => Array.isArray(value));
+    return this.check(c);
   },
   arrayLike() {
-    return this.check(checker('is an array-like object', 'should be an array-like object', value => typeof value.length === 'number'));
+    const c = checker('is an array-like object', 'should be an array-like object', value => typeof value.length === 'number');
+    return this.check(c);
   },
 }
 
@@ -127,7 +142,7 @@ const Structures = {
       doc: indent => 'each item:\n' + itemSchema.doc(indent + '  '),
       validate: value => {
         return value.map((item, index) => {
-          const name = this.context.name + '[' + index + ']';
+          const name = `${this.context.name}[${index}]`;
           return itemSchema.name(name).validate(item);
         });
       }
@@ -145,14 +160,14 @@ const Structures = {
     }
     const parentName = this.context.name;
     return this.last({
-      doc: indent => 'field ' + key + ':\n' + valueSchema.doc(indent + '  '),
+      doc: indent => `field ${key}:\n` + valueSchema.doc(indent + '  '),
       validate: value => {
         if (checker && !checker.validate(value)) {
           valueSchema = valueSchema.required();
         }
         const v = value[key];
         return Object.assign({}, value, {
-          [key]: valueSchema.name(parentName + '.' + key).validate(v)
+          [key]: valueSchema.name(`${parentName}.${key}`).validate(v)
         });
       }
     });
