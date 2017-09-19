@@ -40,31 +40,59 @@ const Contexts = {
 // basics plugin
 const Basics = {
   truthy() {
-    const c = checker('is truthy', 'should be truthy', value => value);
+    const c = checker(
+      'is truthy',
+      'should be truthy',
+      value => value
+    );
     return this.check(c);
   },
   falsy() {
-    const c = checker('is falsy', 'should be falsy', value => !value);
+    const c = checker(
+      'is falsy',
+      'should be falsy',
+      value => !value
+    );
     return this.check(c);
   },
   equal(expected) {
-    const c = checker(`equals to ${expected}`, `should be equal to ${expected}`, value => expected === value);
+    const c = checker(
+      `equals to ${expected}`,
+      `should be equal to ${expected}`,
+      value => expected === value
+    );
     return this.check(c);
   },
   lt(limit) {
-    const c = checker(`is less than ${limit}`, `should be less than ${limit}`, value => value < limit);
+    const c = checker(
+      `is less than ${limit}`,
+      `should be less than ${limit}`,
+      value => value < limit
+    );
     return this.check(c);
   },
   gt(limit) {
-    const c = checker(`is greater than ${limit}`, `should be greater than ${limit}`, value => value > limit);
+    const c = checker(
+      `is greater than ${limit}`,
+      `should be greater than ${limit}`,
+      value => value > limit
+    );
     return this.check(c);
   },
   min(limit) {
-    const c = checker(`is not less than ${limit}`, `should not be less than ${limit}`, value => value >= limit);
+    const c = checker(
+      `is not less than ${limit}`,
+      `should not be less than ${limit}`,
+      value => value >= limit
+    );
     return this.check(c);
   },
   max(limit) {
-    const c = checker(`is not greater than ${limit}`, `should not be greater than ${limit}`, value => value <= limit);
+    const c = checker(
+      `is not greater than ${limit}`,
+      `should not be greater than ${limit}`,
+      value => value <= limit
+    );
     return this.check(c);
   },
   positive(includingZero) {
@@ -74,25 +102,46 @@ const Basics = {
     return includingZero ? this.max(0) : this.lt(0);
   },
   minLength(limit) {
-    const c = checker(`length is less than ${limit}`, `length should not be less than ${limit}`, value => value.length >= limit);
+    const c = checker(
+      `length is less than ${limit}`,
+      `length should not be less than ${limit}`,
+      value => value.length >= limit
+    );
     return this.check(c);
   },
   maxLength(limit) {
-    const c = checker(`length is not greater than ${limit}`, `length should not be greater than ${limit}`, value => value.length <= limit);
+    const c = checker(
+      `length is not greater than ${limit}`,
+      `length should not be greater than ${limit}`,
+      value => value.length <= limit
+    );
     return this.check(c);
   },
   required() {
-    return this.block('is required', value => isUndefined(value), this.reject('is required'));
+    return this.block(
+      'is required',
+      value => isUndefined(value),
+      this.reject('is required')
+    );
   },
   default (defaultValue) {
-    return this.block('is optional (default: ' + defaultValue + ')', value => isUndefined(value), defaultValue);
+    return this.block(
+      'is optional (default: ' + defaultValue + ')',
+      value => isUndefined(value),
+      defaultValue
+    );
   },
 };
 
 const Types = {
   typeOf(typeName, an) {
     const a = an ? 'an' : 'a';
-    return this.check(checker(`is ${a} ${typeName}`, `should be ${a} ${typeName}`, value => typeof value === typeName));
+    const c = checker(
+      `is ${a} ${typeName}`,
+      `should be ${a} ${typeName}`,
+      value => typeof value === typeName
+    );
+    return this.check(c);
   },
   instanceOf(constructorFunc, name) {
     const instanceName = name || constructorFunc.name || 'different class';
@@ -121,15 +170,27 @@ const Types = {
     return this.instanceOf(Date);
   },
   integer() {
-    const c = checker('is an integer', 'should be an integer', value => value % 1 === 0);
+    const c = checker(
+      'is an integer',
+      'should be an integer',
+      value => value % 1 === 0
+    );
     return this.check(c);
   },
   array() {
-    const c = checker('is an array', 'should be an array', value => Array.isArray(value));
+    const c = checker(
+      'is an array',
+      'should be an array',
+      value => Array.isArray(value)
+    );
     return this.check(c);
   },
   arrayLike() {
-    const c = checker('is an array-like object', 'should be an array-like object', value => typeof value.length === 'number');
+    const c = checker(
+      'is an array-like object',
+      'should be an array-like object',
+      value => typeof value.length === 'number'
+    );
     return this.check(c);
   },
 }
