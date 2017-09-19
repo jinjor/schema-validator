@@ -22,13 +22,13 @@ const createClass = () => class Schema {
       f: f
     }].concat(this._validators));
   }
-  then(f) {
-    return this.init(this._validators.concat([{
-      f: f
-    }]));
-  }
   then2(validator) {
     return this.init(this._validators.concat([validator]));
+  }
+  then(f) {
+    return this.then2({
+      f: f
+    });
   }
   validate(value) {
     return validateHelp(this._validators, 0, this.context.name, value, value)
@@ -37,7 +37,7 @@ const createClass = () => class Schema {
     indent = indent || '';
     return this._validators.map(validator => {
       if (validator.type === 'collection') {
-        return 'each item should satisfy:\n' + validator.itemSchema.doc(indent + '  ');
+        return 'each item:\n' + validator.itemSchema.doc(indent + '  ');
       }
       return validator.message || 'should be something';
     }).map(mes => indent + '- ' + mes).join('\n');

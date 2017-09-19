@@ -64,8 +64,9 @@ const Basics = {
 };
 
 const Types = {
-  typeOf(typeName) {
-    return this.check(value => typeof value === typeName, 'should be type of ' + typeName)
+  typeOf(typeName, an) {
+    const a = an ? 'an' : 'a';
+    return this.check(value => typeof value === typeName, `should be ${a} ${typeName}`);
   },
   instanceOf(constructorFunc, name) {
     return this.check(
@@ -86,7 +87,7 @@ const Types = {
     return this.typeOf('function');
   },
   object() {
-    return this.typeOf('object');
+    return this.typeOf('object', true);
   },
   date() {
     return this.instanceOf(Date);
