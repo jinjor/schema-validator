@@ -2,44 +2,49 @@ const predefinedPlugins = require('./plugins.js');
 
 // schema object
 const createClass = () => class Schema {
-  constructor(validate, context) {
-    this._validate = validate || (value => value);
+  constructor(validators, context) {
+    this._validators = validators || [];
     this.context = context || {
       name: 'value'
     };
   }
-  init(validate, context) {
-    return new Schema(validate, context);
+  init(validators, context) {
+    return new Schema(validators || this._validators, context || this.context);
   }
   withContext(additional) {
-    return this.init(this._validate, Object.assign({}, this.context, additional || {}));
-  }
-  then(f) {
-    return this.init(value => {
-      const newValue = this._validate(value);
-      if (newValue instanceof SchemaValidationError) {
-        return newValue;
-      }
-      if (newValue instanceof Schema) {
-        return f(newValue.validate(value));
-      }
-      return f(newValue);
-    });
+    return this.init(undefined, Object.assign({}, this.context, additional || {}));
   }
   reject(message) {
     return new SchemaValidationError(message);
   }
+  first(f) {
+    return this.init([{
+      f: f
+    }].concat(this._validators));
+  }
+  then(f) {
+    return this.init(this._validators.concat([{
+      f: f
+    }]));
+  }
   validate(value) {
-    var newValue = this._validate(value);
-    if (newValue instanceof SchemaValidationError) {
-      throw newValue.toError(this.context.name, value);
-    }
-    if (newValue instanceof Schema) {
-      return validate(newValue)(value);
-    }
-    return newValue;
+    // console.log(this._validators);
+    return validateHelp(this._validators, 0, this.context.name, value)
   }
 }
+
+const validateHelp = (varidators, i, name, value) => {
+  if (i >= varidators.length) {
+    return value;
+  }
+  const varidator = varidators[i];
+  const newValue = varidator.f(value);
+  if (newValue instanceof SchemaValidationError) {
+    throw newValue.toError(name);
+  }
+  return validateHelp(varidators, i + 1, name, newValue);
+}
+
 
 // validate
 class SchemaValidationError {

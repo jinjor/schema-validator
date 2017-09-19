@@ -13,7 +13,7 @@ const Combinators = {
     });
   },
   block(f, defaultValue) {
-    return this.init(value => {
+    return this.first(value => {
       return f(value) ? defaultValue : this.validate(value);
     });
   }
