@@ -12,19 +12,19 @@ const createClass = () => class Schema {
     };
   }
   init(validators, context) {
-    return new Schema(validators || this._validators, context || this.context);
+    return new Schema(validators, context);
   }
   withContext(additional) {
-    return this.init(undefined, Object.assign({}, this.context, additional || {}));
+    return this.init(this._validators, Object.assign({}, this.context, additional || {}));
   }
   reject(message) {
     return reject(message);
   }
   first(validator) {
-    return this.init([validator].concat(this._validators));
+    return this.init([validator].concat(this._validators), this.context);
   }
   last(validator) {
-    return this.init(this._validators.concat([validator]));
+    return this.init(this._validators.concat([validator]), this.context);
   }
   then(f) {
     return this.last({

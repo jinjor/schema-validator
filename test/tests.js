@@ -47,6 +47,14 @@ describe('schema-validator', function() {
     throws(() => sv.number().max(1).validate(2));
     throws(() => sv.number().min(0).max(1).validate(-1));
   });
+  it('should validate string', function() {
+    assert.equal('', sv.string().validate(''));
+    assert.equal('hello', sv.string().validate('hello'));
+    assert.equal('hello', sv.string().minLength(5).validate('hello'));
+    assert.equal('hello', sv.string().maxLength(5).validate('hello'));
+    throws(() => sv.string().minLength(6).validate('hello'));
+    throws(() => sv.string().maxLength(4).validate('hello'));
+  });
   it('should validate array', function() {
     assert.deepEqual([], sv.array().items(sv.number()).validate([]));
     assert.deepEqual([], sv.array().validate([]));

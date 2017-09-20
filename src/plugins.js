@@ -13,6 +13,14 @@ const Combinators = {
     }
     return this.last(checker);
   },
+  shouldBe(message, isValid) {
+    const c = checker('is ' + message, 'should be ' + message, isValid);
+    return this.check(c);
+  },
+  shouldNotBe(message, isValid) {
+    const c = checker('is not ' + message, 'should not be ' + message, isValid);
+    return this.check(c);
+  },
   block(message, f, defaultValue) {
     return this.first({
       doc: _ => message,
@@ -39,60 +47,25 @@ const checker = (condition, message, isValid) => {
 
 const Conditions = {
   truthy() {
-    const c = checker(
-      'is truthy',
-      'should be truthy',
-      value => value
-    );
-    return this.check(c);
+    return this.shouldBe('truthy', value => value);
   },
   falsy() {
-    const c = checker(
-      'is falsy',
-      'should be falsy',
-      value => !value
-    );
-    return this.check(c);
+    return this.shouldBe('falsy', value => !value);
   },
   equal(expected) {
-    const c = checker(
-      `equals to ${expected}`,
-      `should be equal to ${expected}`,
-      value => expected === value
-    );
-    return this.check(c);
+    return this.shouldBe(`equal to ${expected}`, value => expected === value);
   },
   lt(limit) {
-    const c = checker(
-      `is less than ${limit}`,
-      `should be less than ${limit}`,
-      value => value < limit
-    );
-    return this.check(c);
+    return this.shouldBe(`less than ${limit}`, value => value < limit);
   },
   gt(limit) {
-    const c = checker(
-      `is greater than ${limit}`,
-      `should be greater than ${limit}`,
-      value => value > limit
-    );
-    return this.check(c);
+    return this.shouldBe(`greater than ${limit}`, value => value > limit);
   },
   min(limit) {
-    const c = checker(
-      `is not less than ${limit}`,
-      `should not be less than ${limit}`,
-      value => value >= limit
-    );
-    return this.check(c);
+    return this.shouldNotBe(`less than ${limit}`, value => value >= limit);
   },
   max(limit) {
-    const c = checker(
-      `is not greater than ${limit}`,
-      `should not be greater than ${limit}`,
-      value => value <= limit
-    );
-    return this.check(c);
+    return this.shouldNotBe(`greater than ${limit}`, value => value <= limit);
   },
   positive(includingZero) {
     return includingZero ? this.min(0) : this.gt(0);
@@ -100,22 +73,6 @@ const Conditions = {
   negative(includingZero) {
     return includingZero ? this.max(0) : this.lt(0);
   },
-  minLength(limit) {
-    const c = checker(
-      `length is less than ${limit}`,
-      `length should not be less than ${limit}`,
-      value => value.length >= limit
-    );
-    return this.check(c);
-  },
-  maxLength(limit) {
-    const c = checker(
-      `length is not greater than ${limit}`,
-      `length should not be greater than ${limit}`,
-      value => value.length <= limit
-    );
-    return this.check(c);
-  }
 };
 
 const Requisitions = {
@@ -138,20 +95,11 @@ const Requisitions = {
 const Types = {
   typeOf(typeName, an) {
     const a = an ? 'an' : 'a';
-    const c = checker(
-      `is ${a} ${typeName}`,
-      `should be ${a} ${typeName}`,
-      value => typeof value === typeName
-    );
-    return this.check(c);
+    return this.shouldBe(`${a} ${typeName}`, value => typeof value === typeName);
   },
   instanceOf(constructorFunc, name) {
     const instanceName = name || constructorFunc.name || 'different class';
-    return this.check(checker(
-      'is instance of ' + instanceName,
-      'should be instance of ' + instanceName,
-      value => value instanceof constructorFunc
-    ));
+    return this.shouldBe(`instance of ${instanceName}`, value => value instanceof constructorFunc);
   },
   boolean() {
     return this.typeOf('boolean');
@@ -172,28 +120,13 @@ const Types = {
     return this.instanceOf(Date);
   },
   integer() {
-    const c = checker(
-      'is an integer',
-      'should be an integer',
-      value => value % 1 === 0
-    );
-    return this.check(c);
+    return this.shouldBe(`an integer`, value => value % 1 === 0);
   },
   array() {
-    const c = checker(
-      'is an array',
-      'should be an array',
-      value => Array.isArray(value)
-    );
-    return this.check(c);
+    return this.shouldBe(`an array`, value => Array.isArray(value));
   },
   arrayLike() {
-    const c = checker(
-      'is an array-like object',
-      'should be an array-like object',
-      value => typeof value.length === 'number'
-    );
-    return this.check(c);
+    return this.shouldBe(`an array-like object`, value => typeof value.length === 'number');
   },
 }
 
@@ -210,10 +143,7 @@ const Structures = {
     });
   },
   key(key) {
-    return this.last({
-      doc: indent => 'should have key ' + key,
-      validate: value => value[key]
-    });
+    return this.then(value => value[key]);
   },
   field(key, valueSchema, checker) {
     if (!valueSchema) {
@@ -232,6 +162,23 @@ const Structures = {
         });
       }
     });
+  },
+  checkIf(schema) {
+    return this.then(value => {
+      schema.validate(value);
+      return value;
+    });
+  },
+  checkLength(schema) {
+    return this.checkIf(this.init().key('length').name('length of ' + this.context.name).integer().then(len => {
+      schema.validate(len);
+    }));
+  },
+  minLength(limit) {
+    return this.checkLength(this.init().min(limit));
+  },
+  maxLength(limit) {
+    return this.checkLength(this.init().max(limit));
   }
 };
 
