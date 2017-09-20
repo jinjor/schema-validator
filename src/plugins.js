@@ -76,12 +76,16 @@ const Conditions = {
 };
 
 const Requisitions = {
-  required() {
-    return this.block(
-      'is required',
-      value => isUndefined(value),
-      this.reject('is required')
-    );
+  required(isRequired) {
+    if (isUndefined(isRequired) || isRequired) {
+      return this.block(
+        'is required',
+        value => isUndefined(value),
+        this.reject('is required')
+      );
+    } else {
+      return this;
+    }
   },
   default (defaultValue) {
     return this.block(
@@ -153,12 +157,10 @@ const Structures = {
     return this.last({
       doc: indent => `field ${key}:\n` + valueSchema.doc(indent + '  '),
       validate: value => {
-        if (checker && !checker.validate(value)) {
-          valueSchema = valueSchema.required();
-        }
+        const isRequired = checker ? !checker.validate(value) : false;
         const v = value[key];
         return Object.assign({}, value, {
-          [key]: valueSchema.name(`${parentName}.${key}`).validate(v)
+          [key]: valueSchema.name(`${parentName}.${key}`).required(isRequired).validate(v)
         });
       }
     });
