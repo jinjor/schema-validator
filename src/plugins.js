@@ -186,20 +186,20 @@ const Structures = {
       }
     });
   },
-  checkLength(transformSchema) {
-    const lengthFieldSchema = transformSchema(this.init().key('length').name('length of ' + this.context.name).integer());
+  checkCondition(schema) {
     return this.then(value => {
-      if (lengthFieldSchema.isValid(value)) {
-        return value;
+      const result = schema._validate(value);
+      if (result instanceof Reject) {
+        return result;
       }
-      return this.reject('');
+      return value;
     });
   },
   minLength(limit) {
-    return this.checkLength(base => base.min(limit));
+    return this.checkCondition(this.init().key('length').integer().min(limit));
   },
   maxLength(limit) {
-    return this.checkLength(base => base.max(limit));
+    return this.checkCondition(this.init().key('length').integer().max(limit));
   }
 };
 
