@@ -32,7 +32,18 @@ const createClass = () => class Schema {
     });
   }
   validate(value) {
-    return validateHelp(this._validators, 0, this.context.name, value, value)
+    const newValue = this._validate(value);
+    if (newValue instanceof SchemaValidationError) {
+      throw newValue.toError(this.context.name, value);
+    }
+    return newValue;
+  }
+  isValid(value) {
+    const newValue = this._validate(value);
+    return !(newValue instanceof SchemaValidationError);
+  }
+  _validate(value) {
+    return validateHelp(this._validators, 0, this.context.name, value);
   }
   doc(indent) {
     indent = indent || '';
@@ -44,16 +55,16 @@ const createClass = () => class Schema {
   }
 }
 
-function validateHelp(validators, i, name, originalValue, value) {
+function validateHelp(validators, i, name, value) {
   if (i >= validators.length) {
     return value;
   }
   const validator = validators[i];
   const newValue = validator.validate(value);
   if (newValue instanceof SchemaValidationError) {
-    throw newValue.toError(name, originalValue);
+    return newValue;
   }
-  return validateHelp(validators, i + 1, name, originalValue, newValue);
+  return validateHelp(validators, i + 1, name, newValue);
 }
 
 function addPlugins(schema, plugins) {

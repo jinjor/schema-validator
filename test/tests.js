@@ -1,6 +1,9 @@
-const SV = require('../src/index.js');
 const chai = require('chai');
 const assert = chai.assert;
+const SV = require('../src/index.js');
+const common = require('../src/common.js');
+const SchemaValidationError = common.SchemaValidationError;
+
 const verbose = process.argv[3] === '-v'; // npm test -- -v
 
 const log = verbose ? function() {
@@ -12,6 +15,9 @@ const throws = f => {
   try {
     value = f();
   } catch (e) {
+    if (e instanceof SchemaValidationError) {
+      throw new Error('unexpectedly throwed SchemaValidationError');
+    }
     log('    ' + e.message);
     return;
   }
@@ -67,6 +73,54 @@ describe('schema-validator', function() {
     throws(() => sv.array().items(sv.number()).validate(['1']));
     throws(() => sv.array().items(sv.number()).validate(['1', 2]));
     throws(() => sv.array().items(sv.number().min(3)).validate([5, 2, 4]));
+  });
+  it('should validate field', function() {
+    const schema = sv.object().field('a', sv.number());
+    assert.deepEqual({
+      a: 1
+    }, schema.validate({
+      a: 1
+    }));
+    throws(() => schema.validate());
+    throws(() => schema.validate(null));
+    throws(() => schema.validate({}));
+    throws(() => schema.validate({
+      a: ''
+    }));
+    throws(() => schema.validate({
+      a: '1'
+    }));
+  });
+  it('should validate optional field', function() {
+    const schema = sv.object()
+      .field('a', sv.number())
+      .field('b', sv.number(), sv.field('a', sv.equal(1)));
+    assert.deepEqual({
+      a: 1,
+      b: 10
+    }, schema.validate({
+      a: 1,
+      b: 10
+    }));
+    assert.deepEqual({
+      a: 0
+    }, schema.validate({
+      a: 0,
+      b: 'a'
+    }));
+    assert.deepEqual({
+      a: 0
+    }, schema.validate({
+      a: 0,
+      b: 'a'
+    }));
+    throws(() => schema.validate({
+      a: 1,
+    }));
+    throws(() => schema.validate({
+      a: 1,
+      b: 'a'
+    }));
   });
   it('should validate object', function() {
     const schema = sv.object().name('options')
