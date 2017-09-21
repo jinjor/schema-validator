@@ -1,7 +1,7 @@
 const predefinedPlugins = require('./plugins.js');
-const common = require('./common.js');
-const SchemaValidationError = common.SchemaValidationError;
-const reject = common.reject;
+const breakable = require('./breakable.js');
+const Reject = breakable.Reject;
+const Break = breakable.Break;
 
 // schema object
 const createClass = () => class Schema {
@@ -18,10 +18,10 @@ const createClass = () => class Schema {
     return this.init(this._validators, Object.assign({}, this.context, additional || {}));
   }
   reject(message) {
-    return reject(message);
+    return new Reject(message);
   }
-  _break(message) {
-    return reject(message, true);
+  _break(value) {
+    return new Break(value);
   }
   first(validator) {
     return this.init([validator].concat(this._validators), this.context);
@@ -36,17 +36,16 @@ const createClass = () => class Schema {
   }
   validate(value) {
     const newValue = this._validate(value);
-    if (newValue instanceof SchemaValidationError) {
-      if (newValue.isBreak) {
-        return newValue.message;
-      }
+    if (newValue instanceof Reject) {
       throw newValue.toError(this.context.name, value);
+    } else if (newValue instanceof Break) {
+      return newValue.value;
     }
     return newValue;
   }
   isValid(value) {
     const newValue = this._validate(value);
-    return !(newValue instanceof SchemaValidationError && !newValue.isBreak);
+    return !(newValue instanceof Reject);
   }
   _validate(value) {
     return validateHelp(this._validators, 0, this.context.name, value);
@@ -67,11 +66,10 @@ function validateHelp(validators, i, name, value) {
   }
   const validator = validators[i];
   const newValue = validator._validate(value);
-  if (newValue instanceof SchemaValidationError) {
-    if (newValue.isBreak) {
-      return newValue.message;
-    }
+  if (newValue instanceof Reject) {
     return newValue;
+  } else if (newValue instanceof Break) {
+    return newValue.value;
   }
   return validateHelp(validators, i + 1, name, newValue);
 }

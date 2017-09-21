@@ -1,6 +1,6 @@
-const common = require('./common.js');
-const SchemaValidationError = common.SchemaValidationError;
-const reject = common.reject;
+const breakable = require('./breakable.js');
+const Reject = breakable.Reject;
+const reject = breakable.reject;
 
 function isUndefined(a) {
   return typeof a === 'undefined';
@@ -41,7 +41,7 @@ const checker = (condition, message, isValid) => {
   return {
     condition: condition,
     doc: _ => message,
-    _validate: value => isValid(value) ? value : reject(message)
+    _validate: value => isValid(value) ? value : new Reject(message)
   };
 };
 
@@ -155,7 +155,7 @@ const Structures = {
           const item = value[i];
           const name = `${this.context.name}[${i}]`;
           const result = itemSchema.name(name)._validate(item);
-          if (result instanceof SchemaValidationError) {
+          if (result instanceof Reject) {
             return result;
           }
           newArray.push(result);
@@ -177,7 +177,7 @@ const Structures = {
           return value;
         }
         const result = valueSchema.name(`${parentName}.${key}`)._validate(value[key]);
-        if (result instanceof SchemaValidationError) {
+        if (result instanceof Reject) {
           return result;
         }
         return Object.assign({}, value, {
