@@ -172,10 +172,11 @@ const Structures = {
     return this.last({
       doc: groupDoc(`field ${key}`, valueSchema),
       _validate: value => {
-        const newSchema = valueSchema.required(checkerSchema ? checkerSchema.isValid(value) : true);
-        const result = newSchema
-          .name(`${parentName}.${key}`)
-          ._validate(value[key]);
+        const isRequired = checkerSchema ? checkerSchema.isValid(value) : true;
+        if (!isRequired) {
+          return value;
+        }
+        const result = valueSchema.name(`${parentName}.${key}`)._validate(value[key]);
         if (result instanceof SchemaValidationError) {
           return result;
         }
