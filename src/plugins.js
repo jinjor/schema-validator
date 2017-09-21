@@ -165,25 +165,33 @@ const Structures = {
     });
   },
   key(key) {
-    return this.then(value => value[key]).name(`${this.context.name}.${key}`);
+    return this.init().then(value => value[key]).name(`${this.context.name}.${key}`);
   },
-  field(key, valueSchema, checkerSchema) {
-    const parentName = this.context.name;
+  when(checkerSchema, thenSchema) {
     return this.last({
-      doc: groupDoc(`field ${key}`, valueSchema),
+      doc: groupDoc('when ...'),
       _validate: value => {
-        const isRequired = checkerSchema ? checkerSchema.isValid(value) : true;
-        if (!isRequired) {
+        const isValid = checkerSchema.isValid(value);
+        if (!isValid) {
           return value;
         }
-        const result = valueSchema.name(`${parentName}.${key}`)._validate(value[key]);
-        if (result instanceof Reject) {
-          return result;
-        }
-        return Object.assign({}, value, {
-          [key]: result
-        });
+        return thenSchema.validate(value);
       }
+    });
+  },
+  field(key, valueSchema, checkerSchema) {
+    if (checkerSchema) {
+      return this.when(checkerSchema, this.init().field(key, valueSchema));
+    }
+    const parentName = this.context.name;
+    return this.then(value => {
+      const result = valueSchema.name(`${parentName}.${key}`)._validate(value[key]);
+      if (result instanceof Reject) {
+        return result;
+      }
+      return Object.assign({}, value, {
+        [key]: result
+      });
     });
   },
   checkCondition(schema) {
@@ -196,10 +204,10 @@ const Structures = {
     });
   },
   minLength(limit) {
-    return this.checkCondition(this.init().key('length').integer().min(limit));
+    return this.checkCondition(this.key('length').integer().min(limit));
   },
   maxLength(limit) {
-    return this.checkCondition(this.init().key('length').integer().max(limit));
+    return this.checkCondition(this.key('length').integer().max(limit));
   }
 };
 

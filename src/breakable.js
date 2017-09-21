@@ -3,7 +3,7 @@ class Reject {
     this.message = message;
   }
   toError(name, value) {
-    const stringValue = JSON.stringify(value, null, 2);
+    const stringValue = JSON.stringify(value);
     return new Error(`${name} ${this.message}, but got ${stringValue}`);
   }
 }

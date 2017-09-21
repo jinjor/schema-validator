@@ -126,7 +126,8 @@ describe('schema-validator', function() {
       .field('a', sv.number().then(v => v * 2))
       .field('b', sv.string().then(v => v.toUpperCase()))
       .field('c', sv.array().items(sv.number()))
-      .field('d', sv.object(), sv.key('c').minLength(3))
+      // .field('d', sv.object(), sv.key('c').minLength(3))
+      .when(sv.key('c').minLength(3), sv.field('d', sv.object()))
       .field('e', sv.boolean().default(true))
       .field('f', sv.number(), sv.key('e').truthy())
       .field('g', sv.number().default(100), sv.key('e').truthy());
