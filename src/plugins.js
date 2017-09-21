@@ -134,10 +134,14 @@ const Types = {
   },
 }
 
+function groupDoc(header, childSchema) {
+  return indent => header + ':\n' + childSchema.doc(indent + '  ');
+}
+
 const Structures = {
   items(itemSchema) {
     return this.last({
-      doc: indent => 'each item:\n' + itemSchema.doc(indent + '  '),
+      doc: groupDoc('each item', itemSchema),
       validate: value => {
         return value.map((item, index) => {
           const name = `${this.context.name}[${index}]`;
@@ -150,17 +154,15 @@ const Structures = {
     return this.then(value => value[key]);
   },
   field(key, valueSchema, checker) {
-    if (!valueSchema) {
-      throw new Error(`key ${key}'s value schema is undefined`);
-    }
     const parentName = this.context.name;
     return this.last({
-      doc: indent => `field ${key}:\n` + valueSchema.doc(indent + '  '),
+      doc: groupDoc(`field ${key}`, valueSchema),
       validate: value => {
-        const isRequired = checker ? !checker.validate(value) : false;
-        const v = value[key];
         return Object.assign({}, value, {
-          [key]: valueSchema.name(`${parentName}.${key}`).required(isRequired).validate(v)
+          [key]: valueSchema
+            .name(`${parentName}.${key}`)
+            .required(checker ? !checker.validate(value) : false)
+            .validate(value[key])
         });
       }
     });
