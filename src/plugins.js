@@ -139,6 +139,9 @@ const Types = {
   arrayLike() {
     return this.shouldBe(`an array-like object`, value => typeof value.length === 'number');
   },
+  defined() {
+    return this.shouldBe(`defined`, value => !isUndefined(value));
+  }
 }
 
 function groupDoc(header, childSchema) {
