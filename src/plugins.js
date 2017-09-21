@@ -7,19 +7,27 @@ function isUndefined(a) {
 }
 
 const Combinators = {
-  check(checker) {
-    if (!checker.condition) {
-      throw new Error('checker must contain "condition"');
-    }
-    return this.last(checker);
+  tap(f) {
+    return this.then(value => {
+      const result = f(value);
+      if (result instanceof Reject) {
+        return result;
+      }
+      return value;
+    });
+  },
+  check(schema) {
+    return this.tap(value => {
+      return schema._validate(value);
+    });
   },
   shouldBe(message, isValid) {
     const c = checker('is ' + message, 'should be ' + message, isValid);
-    return this.check(c);
+    return this.last(c);
   },
   shouldNotBe(message, isValid) {
     const c = checker('is not ' + message, 'should not be ' + message, isValid);
-    return this.check(c);
+    return this.last(c);
   },
   block(message, f, whenMatched) {
     return this.first({
@@ -188,25 +196,11 @@ const Structures = {
       })._validate(value);
     });
   },
-  tap(f) {
-    return this.then(value => {
-      const result = f(value);
-      if (result instanceof Reject) {
-        return result;
-      }
-      return value;
-    });
-  },
-  checkCondition(schema) {
-    return this.tap(value => {
-      return schema._validate(value);
-    });
-  },
   minLength(limit) {
-    return this.checkCondition(this.key('length').integer().min(limit));
+    return this.check(this.key('length').integer().min(limit));
   },
   maxLength(limit) {
-    return this.checkCondition(this.key('length').integer().max(limit));
+    return this.check(this.key('length').integer().max(limit));
   }
 };
 
