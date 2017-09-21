@@ -123,22 +123,15 @@ describe('schema-validator', function() {
   });
   it('should validate object', function() {
     const schema = sv.object().name('options')
-      .tap(log)
       .field('a', sv.number().then(v => v * 2))
-      .tap(log)
       .field('b', sv.string().then(v => v.toUpperCase()))
-      .tap(log)
       .field('c', sv.array().items(sv.number()))
-      .tap(log)
       .field('d', sv.object(), sv.key('c').minLength(3))
-      .tap(log)
       .field('e', sv.boolean().default(true))
-      .tap(log)
       .when(sv.key('e').truthy(),
         sv.field('f', sv.number())
         .field('g', sv.number().default(100))
       )
-      .tap(log);
 
     assert.deepEqual({
       a: 2,
