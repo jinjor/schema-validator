@@ -66,13 +66,7 @@ const Conditions = {
   },
   max(limit) {
     return this.shouldNotBe(`greater than ${limit}`, value => value <= limit);
-  },
-  positive(includingZero) {
-    return includingZero ? this.min(0) : this.gt(0);
-  },
-  negative(includingZero) {
-    return includingZero ? this.max(0) : this.lt(0);
-  },
+  }
 };
 
 const Requisitions = {
@@ -186,24 +180,26 @@ const Structures = {
     if (checkerSchema) {
       return this.when(checkerSchema, this.init().field(key, valueSchema));
     }
-    const parentName = this.context.name;
     return this.then(value => {
-      const result = valueSchema.name(`${parentName}.${key}`)._validate(value[key]);
-      if (result instanceof Reject) {
-        return result;
-      }
-      return Object.assign({}, value, {
-        [key]: result
-      });
+      return this.key(key).last(valueSchema).then(v => {
+        return Object.assign({}, value, {
+          [key]: v
+        });
+      })._validate(value);
     });
   },
-  checkCondition(schema) {
+  tap(f) {
     return this.then(value => {
-      const result = schema._validate(value);
+      const result = f(value);
       if (result instanceof Reject) {
         return result;
       }
       return value;
+    });
+  },
+  checkCondition(schema) {
+    return this.tap(value => {
+      return schema._validate(value);
     });
   },
   minLength(limit) {
