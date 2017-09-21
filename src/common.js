@@ -1,6 +1,7 @@
 class SchemaValidationError {
-  constructor(message) {
+  constructor(message, isBreak) {
     this.message = message;
+    this.isBreak = isBreak;
   }
   toError(name, value) {
     const stringValue = JSON.stringify(value, null, 2);
@@ -8,8 +9,8 @@ class SchemaValidationError {
   }
 }
 
-function reject(message) {
-  return new SchemaValidationError(message);
+function reject(message, isBreak) {
+  return new SchemaValidationError(message, isBreak);
 }
 
 module.exports = {

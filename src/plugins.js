@@ -21,10 +21,10 @@ const Combinators = {
     const c = checker('is not ' + message, 'should not be ' + message, isValid);
     return this.check(c);
   },
-  block(message, f, defaultValue) {
+  block(message, f, whenMatched) {
     return this.first({
       doc: _ => message,
-      validate: value => f(value) ? defaultValue : value
+      _validate: value => f(value) ? whenMatched(value) : value
     });
   },
 };
@@ -41,7 +41,7 @@ const checker = (condition, message, isValid) => {
   return {
     condition: condition,
     doc: _ => message,
-    validate: value => isValid(value) ? value : reject(message)
+    _validate: value => isValid(value) ? value : reject(message)
   };
 };
 
@@ -77,21 +77,28 @@ const Conditions = {
 
 const Requisitions = {
   required(isRequired) {
-    if (isUndefined(isRequired) || isRequired) {
+    if (isUndefined(isRequired) ? true : isRequired) {
       return this.block(
         'is required',
         value => isUndefined(value),
-        this.reject('is required')
+        _ => this.reject('is required')
       );
     } else {
-      return this;
+      return this.block(
+        '',
+        value => true,
+        value => this._break(value)
+      );
     }
+  },
+  optional() {
+    return this.required(false);
   },
   default (defaultValue) {
     return this.block(
       'is optional (default: ' + defaultValue + ')',
       value => isUndefined(value),
-      defaultValue
+      _ => this._break(defaultValue)
     );
   },
 };
@@ -142,47 +149,56 @@ const Structures = {
   items(itemSchema) {
     return this.last({
       doc: groupDoc('each item', itemSchema),
-      validate: value => {
-        return value.map((item, index) => {
-          const name = `${this.context.name}[${index}]`;
-          return itemSchema.name(name).validate(item);
-        });
+      _validate: value => {
+        const newArray = [];
+        for (let i = 0; i < value.length; i++) {
+          const item = value[i];
+          const name = `${this.context.name}[${i}]`;
+          const result = itemSchema.name(name)._validate(item);
+          if (result instanceof SchemaValidationError) {
+            return result;
+          }
+          newArray.push(result);
+        }
+        return newArray;
       }
     });
   },
   key(key) {
-    return this.then(value => value[key]);
+    return this.then(value => value[key]).name(`${this.context.name}.${key}`);
   },
-  field(key, valueSchema, checker) {
+  field(key, valueSchema, checkerSchema) {
     const parentName = this.context.name;
     return this.last({
       doc: groupDoc(`field ${key}`, valueSchema),
-      validate: value => {
+      _validate: value => {
+        const newSchema = valueSchema.required(checkerSchema ? checkerSchema.isValid(value) : true);
+        const result = newSchema
+          .name(`${parentName}.${key}`)
+          ._validate(value[key]);
+        if (result instanceof SchemaValidationError) {
+          return result;
+        }
         return Object.assign({}, value, {
-          [key]: valueSchema
-            .name(`${parentName}.${key}`)
-            .required(checker ? !checker.validate(value) : false)
-            .validate(value[key])
+          [key]: result
         });
       }
     });
   },
-  checkIf(schema) {
+  checkLength(transformSchema) {
+    const lengthFieldSchema = transformSchema(this.init().key('length').name('length of ' + this.context.name).integer());
     return this.then(value => {
-      schema.validate(value);
-      return value;
+      if (lengthFieldSchema.isValid(value)) {
+        return value;
+      }
+      return this.reject('');
     });
   },
-  checkLength(schema) {
-    return this.checkIf(this.init().key('length').name('length of ' + this.context.name).integer().then(len => {
-      schema.validate(len);
-    }));
-  },
   minLength(limit) {
-    return this.checkLength(this.init().min(limit));
+    return this.checkLength(base => base.min(limit));
   },
   maxLength(limit) {
-    return this.checkLength(this.init().max(limit));
+    return this.checkLength(base => base.max(limit));
   }
 };
 

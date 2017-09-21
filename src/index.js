@@ -20,6 +20,9 @@ const createClass = () => class Schema {
   reject(message) {
     return reject(message);
   }
+  _break(message) {
+    return reject(message, true);
+  }
   first(validator) {
     return this.init([validator].concat(this._validators), this.context);
   }
@@ -28,19 +31,22 @@ const createClass = () => class Schema {
   }
   then(f) {
     return this.last({
-      validate: f
+      _validate: f
     });
   }
   validate(value) {
     const newValue = this._validate(value);
     if (newValue instanceof SchemaValidationError) {
+      if (newValue.isBreak) {
+        return newValue.message;
+      }
       throw newValue.toError(this.context.name, value);
     }
     return newValue;
   }
   isValid(value) {
     const newValue = this._validate(value);
-    return !(newValue instanceof SchemaValidationError);
+    return !(newValue instanceof SchemaValidationError && !newValue.isBreak);
   }
   _validate(value) {
     return validateHelp(this._validators, 0, this.context.name, value);
@@ -60,8 +66,11 @@ function validateHelp(validators, i, name, value) {
     return value;
   }
   const validator = validators[i];
-  const newValue = validator.validate(value);
+  const newValue = validator._validate(value);
   if (newValue instanceof SchemaValidationError) {
+    if (newValue.isBreak) {
+      return newValue.message;
+    }
     return newValue;
   }
   return validateHelp(validators, i + 1, name, newValue);
