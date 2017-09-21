@@ -1,32 +1,23 @@
 const breakable = require('./breakable.js');
+
 const Reject = breakable.Reject;
-const reject = breakable.reject;
 
 function isUndefined(a) {
   return typeof a === 'undefined';
 }
 
 const Combinators = {
-  tap(f) {
-    return this.then(value => {
-      const result = f(value);
-      if (result instanceof Reject) {
-        return result;
-      }
-      return value;
-    });
-  },
   check(schema) {
     return this.tap(value => {
       return schema._validate(value);
     });
   },
   shouldBe(message, isValid) {
-    const c = checker('is ' + message, 'should be ' + message, isValid);
+    const c = checker(this, 'is ' + message, 'should be ' + message, isValid);
     return this.last(c);
   },
   shouldNotBe(message, isValid) {
-    const c = checker('is not ' + message, 'should not be ' + message, isValid);
+    const c = checker(this, 'is not ' + message, 'should not be ' + message, isValid);
     return this.last(c);
   },
   block(message, f, whenMatched) {
@@ -45,11 +36,11 @@ const Contexts = {
   }
 };
 
-const checker = (condition, message, isValid) => {
+const checker = (self, condition, message, isValid) => {
   return {
     condition: condition,
     doc: _ => message,
-    _validate: value => isValid(value) ? value : new Reject(message)
+    _validate: value => isValid(value) ? value : self.reject(message)
   };
 };
 
