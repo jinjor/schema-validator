@@ -151,8 +151,6 @@ describe('schema-validator', function() {
   });
   it('should validate required', function() {
     assert.equal(0, sv.number().validate(0));
-    assert.equal(undefined, sv.string().required(false).validate(undefined));
-    assert.equal(undefined, sv.string().optional().validate(undefined));
     throws(() => sv.number().validate());
     assert.equal(0, sv.number().required().validate(0));
     assert.equal(0, sv.required().number().validate(0));

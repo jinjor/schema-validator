@@ -65,23 +65,12 @@ const Conditions = {
 };
 
 const Requisitions = {
-  required(isRequired) {
-    if (isUndefined(isRequired) ? true : isRequired) {
-      return this.block(
-        'is required',
-        value => isUndefined(value),
-        _ => this.reject('is required')
-      );
-    } else {
-      return this.block(
-        '',
-        value => true,
-        value => this._break(value)
-      );
-    }
-  },
-  optional() {
-    return this.required(false);
+  required() {
+    return this.block(
+      'is required',
+      value => isUndefined(value),
+      _ => this.reject('is required')
+    );
   },
   default (defaultValue) {
     return this.block(
