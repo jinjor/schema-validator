@@ -61,6 +61,18 @@ const createBaseClass = () => class Schema {
   _validate(value) {
     return validateHelp(this._validators, 0, this.context.name, value);
   }
+  _validateAll(items, f) {
+    const newItems = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const result = f(item, i);
+      if (result instanceof Reject) {
+        return result;
+      }
+      newItems.push(item);
+    }
+    return newItems;
+  }
   doc(indent) {
     indent = indent || '';
     return this._validators

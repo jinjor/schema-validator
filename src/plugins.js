@@ -1,7 +1,3 @@
-const breakable = require('./breakable.js');
-
-const Reject = breakable.Reject;
-
 function isUndefined(a) {
   return typeof a === 'undefined';
 }
@@ -146,17 +142,10 @@ const Structures = {
     return this.last({
       doc: groupDoc('each item', itemSchema),
       _validate: value => {
-        const newArray = [];
-        for (let i = 0; i < value.length; i++) {
-          const item = value[i];
+        return this._validateAll(value, (item, i) => {
           const name = `${this.context.name}[${i}]`;
-          const result = itemSchema.name(name)._validate(item);
-          if (result instanceof Reject) {
-            return result;
-          }
-          newArray.push(result);
-        }
-        return newArray;
+          return itemSchema.name(name)._validate(item);
+        });
       }
     });
   },
