@@ -145,16 +145,13 @@ const Structures = {
     return this.key('length');
   },
   when(checkerSchema, thenSchema) {
-    return this.last({
-      doc: groupDoc('when ...'),
-      _validate: value => {
-        const isValid = checkerSchema.isValid(value);
-        if (!isValid) {
-          return value;
-        }
-        return thenSchema.validate(value);
+    return this.then(value => {
+      const isValid = checkerSchema.isValid(value);
+      if (!isValid) {
+        return value;
       }
-    });
+      return thenSchema.validate(value);
+    })
   },
   field(key, valueSchema, checkerSchema) {
     if (checkerSchema) {
