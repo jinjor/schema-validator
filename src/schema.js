@@ -1,9 +1,21 @@
-const breakable = require('./breakable.js');
-const Reject = breakable.Reject;
-const Break = breakable.Break;
+class Reject {
+  constructor(message) {
+    this.message = message;
+  }
+  toError(name, value) {
+    const stringValue = JSON.stringify(value);
+    return new Error(`${name} ${this.message}, but got ${stringValue}`);
+  }
+}
+
+class Break {
+  constructor(value) {
+    this.value = value;
+  }
+}
 
 // schema object
-module.exports = () => class Schema {
+const createSchemaClass = () => class Schema {
   static empty() {
     return new Schema();
   }
@@ -19,7 +31,7 @@ module.exports = () => class Schema {
   reject(message) {
     return new Reject(message);
   }
-  _break(value) {
+  break (value) {
     return new Break(value);
   }
   withContext(additional) {
@@ -108,3 +120,5 @@ function validateHelp(validators, i, name, value) {
   }
   return validateHelp(validators, i + 1, name, newValue);
 }
+
+module.exports = createSchemaClass;

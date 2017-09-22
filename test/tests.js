@@ -1,9 +1,6 @@
 const chai = require('chai');
 const assert = chai.assert;
 const SV = require('../src/index.js');
-const breakable = require('../src/breakable.js');
-const Reject = breakable.Reject;
-const Break = breakable.Break;
 
 const verbose = process.argv[3] === '-v'; // npm test -- -v
 
@@ -16,12 +13,6 @@ const throws = f => {
   try {
     value = f();
   } catch (e) {
-    if (e instanceof Reject) {
-      throw new Error('unexpectedly throwed Reject');
-    }
-    if (e instanceof Break) {
-      throw new Error('unexpectedly throwed Break');
-    }
     log('    ' + e.message);
     return;
   }

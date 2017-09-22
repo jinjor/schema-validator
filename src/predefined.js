@@ -3,12 +3,14 @@ function isUndefined(a) {
 }
 
 module.exports = {
+  // helper
   shouldBe(message, isValid) {
     return this.then(value => isValid(value) ? value : this.reject('should be ' + message));
   },
   shouldNotBe(message, isValid) {
     return this.then(value => isValid(value) ? value : this.reject('should not be ' + message));
   },
+  // Comparison
   truthy() {
     return this.shouldBe('truthy', value => value);
   },
@@ -35,7 +37,7 @@ module.exports = {
     return this.first(value => isUndefined(value) ? this.reject('is required') : value);
   },
   default (defaultValue) {
-    return this.first(value => isUndefined(value) ? this._break(defaultValue) : value);
+    return this.first(value => isUndefined(value) ? this.break(defaultValue) : value);
   },
   // Types
   typeOf(typeName) {
@@ -87,11 +89,14 @@ module.exports = {
   key(key) {
     return this.init().then(value => value[key]).name(`${this.context.name}.${key}`);
   },
-  when(checkerSchema, thenSchema) {
+  when(checkerSchema, thenSchema, elseSchema) {
     return this.then(value => {
       const isValid = checkerSchema.isValid(value);
       if (isValid) {
         return thenSchema;
+      }
+      if (elseSchema) {
+        return elseSchema;
       }
       return value;
     });
