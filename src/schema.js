@@ -83,14 +83,6 @@ const createBaseClass = () => class Schema {
     }
     return newItems;
   }
-  doc(indent) {
-    indent = indent || '';
-    return this._validators
-      .filter(validator => validator.doc)
-      .map(validator => validator.doc(indent))
-      .map(mes => indent + '- ' + mes)
-      .join('\n');
-  }
 }
 
 function validateHelp(validators, i, name, value) {

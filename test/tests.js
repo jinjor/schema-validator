@@ -174,16 +174,4 @@ describe('schema-validator', function() {
     assert.equal('hello', sv.isHello().validate('hello'));
     throws(() => sv.isHello().validate('bye'));
   });
-  it('should generate doc', function() {
-    const indent = '    ';
-    log(sv.number().doc(indent));
-    log();
-    log(sv.array().items(sv.number().lt(100)).doc(indent));
-    log();
-    log(sv.object().name('options')
-      .field('a', sv.number().then(v => v * 2))
-      .field('b', sv.string().then(v => v.toUpperCase()))
-      .doc(indent)
-    );
-  });
 });
