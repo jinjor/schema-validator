@@ -1,8 +1,8 @@
-const createSchemaClass = require('./schema.js');
+const schema = require('./schema.js');
 const predefinedPlugin = require('./predefined.js');
 
 module.exports = userPlugin => {
-  const cls = createSchemaClass();
+  const cls = schema.createClass();
   [predefinedPlugin, userPlugin].forEach(plugin => addPlugin(cls.prototype, plugin));
   return cls.empty();
 }

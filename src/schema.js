@@ -1,10 +1,16 @@
+class SchemaValidatorError extends Error {
+  constructor(message) {
+    this.message = message;
+  }
+}
+
 class Reject {
   constructor(message) {
     this.message = message;
   }
   toError(name, value) {
     const stringValue = JSON.stringify(value);
-    return new Error(`${name} ${this.message}, but got ${stringValue}`);
+    return new SchemaValidatorError(`${name} ${this.message}, but got ${stringValue}`);
   }
 }
 
@@ -121,4 +127,7 @@ function validateHelp(validators, i, name, value) {
   return validateHelp(validators, i + 1, name, newValue);
 }
 
-module.exports = createSchemaClass;
+module.exports = {
+  createClass: createSchemaClass,
+  SchemaValidatorError: SchemaValidatorError,
+};

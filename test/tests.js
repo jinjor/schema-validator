@@ -1,6 +1,7 @@
 const chai = require('chai');
 const assert = chai.assert;
 const SV = require('../src/index.js');
+const schema = require('../src/schema.js');
 
 const verbose = process.argv[3] === '-v'; // npm test -- -v
 
@@ -13,6 +14,9 @@ const throws = f => {
   try {
     value = f();
   } catch (e) {
+    if (e instanceof schema.SchemaValidatorError) {
+      throw new Error('unknown error was thrown: ' + e);
+    }
     log('    ' + e.message);
     return;
   }
