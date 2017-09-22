@@ -17,7 +17,7 @@ const Combinators = {
   block(message, f, whenMatched) {
     return this.first({
       doc: _ => message,
-      _validate: value => f(value) ? whenMatched(value) : value
+      _validate: value => f(value) ? whenMatched : value
     });
   },
 };
@@ -67,14 +67,14 @@ const Requisitions = {
     return this.block(
       'is required',
       value => isUndefined(value),
-      _ => this.reject('is required')
+      this.reject('is required')
     );
   },
   default (defaultValue) {
     return this.block(
       'is optional (default: ' + defaultValue + ')',
       value => isUndefined(value),
-      _ => this._break(defaultValue)
+      this._break(defaultValue)
     );
   },
 };
