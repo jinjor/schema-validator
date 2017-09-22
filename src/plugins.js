@@ -141,6 +141,9 @@ const Structures = {
   key(key) {
     return this.init().then(value => value[key]).name(`${this.context.name}.${key}`);
   },
+  length() {
+    return this.key('length');
+  },
   when(checkerSchema, thenSchema) {
     return this.last({
       doc: groupDoc('when ...'),
@@ -166,10 +169,10 @@ const Structures = {
     });
   },
   minLength(limit) {
-    return this.check(this.key('length').integer().min(limit));
+    return this.check(this.length().min(limit));
   },
   maxLength(limit) {
-    return this.check(this.key('length').integer().max(limit));
+    return this.check(this.length().max(limit));
   }
 };
 
