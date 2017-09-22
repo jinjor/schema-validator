@@ -80,8 +80,8 @@ const Requisitions = {
 };
 
 const Types = {
-  typeOf(typeName, an) {
-    const a = an ? 'an' : 'a';
+  typeOf(typeName) {
+    const a = /[aeiou]/.test(typeName.charAt(0)) ? 'an' : 'a';
     return this.shouldBe(`${a} ${typeName}`, value => typeof value === typeName);
   },
   instanceOf(constructorFunc, name) {
@@ -101,7 +101,7 @@ const Types = {
     return this.typeOf('function');
   },
   object() {
-    return this.typeOf('object', true);
+    return this.typeOf('object');
   },
   date() {
     return this.instanceOf(Date);
