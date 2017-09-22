@@ -3,7 +3,7 @@ const Reject = breakable.Reject;
 const Break = breakable.Break;
 
 // schema object
-const createBaseClass = () => class Schema {
+module.exports = () => class Schema {
   static empty() {
     return new Schema();
   }
@@ -25,14 +25,24 @@ const createBaseClass = () => class Schema {
   withContext(additional) {
     return this.init(this._validators, Object.assign({}, this.context, additional || {}));
   }
-  first(validator) {
+  name(name) {
+    return this.withContext({
+      name: name
+    });
+  }
+  _first(validator) {
     return this.init([validator].concat(this._validators), this.context);
   }
-  last(validator) {
+  _last(validator) {
     return this.init(this._validators.concat([validator]), this.context);
   }
+  first(f) {
+    return this._first({
+      _validate: f
+    });
+  }
   then(f) {
-    return this.last({
+    return this._last({
       _validate: value => {
         const newValue = f(value);
         if (newValue instanceof Schema) {
@@ -42,7 +52,7 @@ const createBaseClass = () => class Schema {
       }
     });
   }
-  tap(f) {
+  check(f) {
     return this.then(value => {
       let result = f(value);
       if (result instanceof Schema) {
@@ -98,28 +108,3 @@ function validateHelp(validators, i, name, value) {
   }
   return validateHelp(validators, i + 1, name, newValue);
 }
-
-function addPlugins(schema, plugins) {
-  plugins.forEach(plugin => addPlugin(schema, plugin));
-}
-
-function addPlugin(schema, plugin) {
-  Object.keys(plugin).forEach(key => {
-    if (schema[key]) {
-      throw new Error(`PluginError: Function ${key} is already defined.`);
-    }
-    const f = plugin[key];
-    if (typeof f !== 'function') {
-      throw new Error(`PluginError: Plugin ${key} is mulformed. Value should be a function.`);
-    }
-    schema[key] = f;
-  });
-}
-
-module.exports = {
-  createClass(plugins) {
-    const cls = createBaseClass();
-    addPlugins(cls.prototype, plugins);
-    return cls;
-  }
-};

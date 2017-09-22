@@ -2,40 +2,13 @@ function isUndefined(a) {
   return typeof a === 'undefined';
 }
 
-const Combinators = {
-  check(schema) {
-    return this.tap(_ => schema);
-  },
+module.exports = {
   shouldBe(message, isValid) {
-    const c = checker(this, 'should be ' + message, isValid);
-    return this.last(c);
+    return this.then(value => isValid(value) ? value : this.reject('should be ' + message));
   },
   shouldNotBe(message, isValid) {
-    const c = checker(this, 'should not be ' + message, isValid);
-    return this.last(c);
+    return this.then(value => isValid(value) ? value : this.reject('should not be ' + message));
   },
-  block(message, f, whenMatched) {
-    return this.first({
-      _validate: value => f(value) ? whenMatched : value
-    });
-  },
-};
-
-const Contexts = {
-  name(name) {
-    return this.withContext({
-      name: name
-    });
-  }
-};
-
-const checker = (self, message, isValid) => {
-  return {
-    _validate: value => isValid(value) ? value : self.reject(message)
-  };
-};
-
-const Conditions = {
   truthy() {
     return this.shouldBe('truthy', value => value);
   },
@@ -56,34 +29,21 @@ const Conditions = {
   },
   max(limit) {
     return this.shouldNotBe(`greater than ${limit}`, value => value <= limit);
-  }
-};
-
-const Requisitions = {
+  },
+  // Requisitions
   required() {
-    return this.block(
-      'is required',
-      value => isUndefined(value),
-      this.reject('is required')
-    );
+    return this.first(value => isUndefined(value) ? this.reject('is required') : value);
   },
   default (defaultValue) {
-    return this.block(
-      'is optional (default: ' + defaultValue + ')',
-      value => isUndefined(value),
-      this._break(defaultValue)
-    );
+    return this.first(value => isUndefined(value) ? this._break(defaultValue) : value);
   },
-};
-
-const Types = {
+  // Types
   typeOf(typeName) {
     const a = /[aeiou]/.test(typeName.charAt(0)) ? 'an' : 'a';
     return this.shouldBe(`${a} ${typeName}`, value => typeof value === typeName);
   },
-  instanceOf(constructorFunc, name) {
-    const instanceName = name || constructorFunc.name || 'different class';
-    return this.shouldBe(`instance of ${instanceName}`, value => value instanceof constructorFunc);
+  instanceOf(cls) {
+    return this.shouldBe(`instance of ${cls.name}`, value => value instanceof constructorFunc);
   },
   boolean() {
     return this.typeOf('boolean');
@@ -114,25 +74,18 @@ const Types = {
   },
   defined() {
     return this.shouldBe(`defined`, value => !isUndefined(value));
-  }
-}
-
-const Structures = {
+  },
+  // Structures
   items(itemSchema) {
-    return this.last({
-      _validate: value => {
-        return this._validateAll(value, (item, i) => {
-          const name = `${this.context.name}[${i}]`;
-          return itemSchema.name(name);
-        });
-      }
+    return this.then(value => {
+      return this._validateAll(value, (item, i) => {
+        const name = `${this.context.name}[${i}]`;
+        return itemSchema.name(name);
+      });
     });
   },
   key(key) {
     return this.init().then(value => value[key]).name(`${this.context.name}.${key}`);
-  },
-  length() {
-    return this.key('length');
   },
   when(checkerSchema, thenSchema) {
     return this.then(value => {
@@ -148,7 +101,7 @@ const Structures = {
       return this.when(checkerSchema, this.init().field(key, valueSchema));
     }
     return this.then(value => {
-      return this.key(key).last(valueSchema).then(v => {
+      return this.key(key).then(_ => valueSchema).then(v => {
         return Object.assign({}, value, {
           [key]: v
         });
@@ -156,22 +109,9 @@ const Structures = {
     });
   },
   minLength(limit) {
-    return this.check(this.length().min(limit));
+    return this.check(_ => this.key('length').min(limit));
   },
   maxLength(limit) {
-    return this.check(this.length().max(limit));
+    return this.check(_ => this.key('length').max(limit));
   }
 };
-
-// TODO: possible APIs
-// mail, uri, alphanum, regex, guid, hex, uppercase, lowercase
-// replace, trim
-
-module.exports = [
-  Combinators,
-  Contexts,
-  Conditions,
-  Requisitions,
-  Types,
-  Structures
-];

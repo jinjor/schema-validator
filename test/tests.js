@@ -30,10 +30,7 @@ const throws = f => {
 
 const sv = SV({
   isHello() {
-    return this.last({
-      doc: 'should be "hello"',
-      _validate: value => (value === 'hello') ? value : this.reject()
-    });
+    return this.then(value => (value === 'hello') ? value : this.reject('should be "hello"'));
   }
 });
 
