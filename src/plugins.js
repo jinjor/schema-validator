@@ -4,9 +4,7 @@ function isUndefined(a) {
 
 const Combinators = {
   check(schema) {
-    return this.tap(value => {
-      return schema._validate(value);
-    });
+    return this.tap(_ => schema);
   },
   shouldBe(message, isValid) {
     const c = checker(this, 'is ' + message, 'should be ' + message, isValid);
@@ -133,7 +131,7 @@ const Structures = {
       _validate: value => {
         return this._validateAll(value, (item, i) => {
           const name = `${this.context.name}[${i}]`;
-          return itemSchema.name(name)._validate(item);
+          return itemSchema.name(name);
         });
       }
     });
@@ -147,11 +145,11 @@ const Structures = {
   when(checkerSchema, thenSchema) {
     return this.then(value => {
       const isValid = checkerSchema.isValid(value);
-      if (!isValid) {
-        return value;
+      if (isValid) {
+        return thenSchema;
       }
-      return thenSchema.validate(value);
-    })
+      return value;
+    });
   },
   field(key, valueSchema, checkerSchema) {
     if (checkerSchema) {
@@ -162,7 +160,7 @@ const Structures = {
         return Object.assign({}, value, {
           [key]: v
         });
-      })._validate(value);
+      });
     });
   },
   minLength(limit) {

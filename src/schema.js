@@ -33,12 +33,21 @@ const createBaseClass = () => class Schema {
   }
   then(f) {
     return this.last({
-      _validate: f
+      _validate: value => {
+        const newValue = f(value);
+        if (newValue instanceof Schema) {
+          return newValue._validate(value);
+        }
+        return newValue;
+      }
     });
   }
   tap(f) {
     return this.then(value => {
-      const result = f(value);
+      let result = f(value);
+      if (result instanceof Schema) {
+        result = result._validate(value);
+      }
       if (result instanceof Reject) {
         return result;
       }
@@ -65,7 +74,8 @@ const createBaseClass = () => class Schema {
     const newItems = [];
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      const result = f(item, i);
+      const itemSchema = f(item, i);
+      const result = itemSchema._validate(item);
       if (result instanceof Reject) {
         return result;
       }
