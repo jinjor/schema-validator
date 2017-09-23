@@ -40,11 +40,11 @@ const createSchemaClass = () => class Schema {
   break (value) {
     return new Break(value);
   }
-  withContext(additional) {
+  _withContext(additional) {
     return this.init(this._validators, Object.assign({}, this.context, additional || {}));
   }
   name(name) {
-    return this.withContext({
+    return this._withContext({
       name: name
     });
   }
