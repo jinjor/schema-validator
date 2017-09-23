@@ -87,7 +87,7 @@ module.exports = {
     });
   },
   key(key) {
-    return this.init().then(value => value[key]).name(`${this.context.name}.${key}`);
+    return this.empty().then(value => value[key]).name(`${this.context.name}.${key}`);
   },
   keyValue(key, valueSchema) {
     return this.key(key).then(_ => valueSchema).then(v => {
@@ -104,7 +104,7 @@ module.exports = {
       });
     };
     if (checkerSchema) {
-      return this.when(checkerSchema, this.init().then(toMergeSchema));
+      return this.when(checkerSchema, this.empty().then(toMergeSchema));
     }
     return this.then(toMergeSchema);
   },

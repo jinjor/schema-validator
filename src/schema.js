@@ -29,8 +29,11 @@ const createSchemaClass = plugins => {
         name: 'value'
       };
     }
-    init(validators, context) {
+    _init(validators, context) {
       return new Schema(validators, context);
+    }
+    empty() {
+      return this._init();
     }
     reject(message) {
       return new Reject(message);
@@ -39,7 +42,7 @@ const createSchemaClass = plugins => {
       return new Break(value);
     }
     _withContext(additional) {
-      return this.init(this._validators, Object.assign({}, this.context, additional || {}));
+      return this._init(this._validators, Object.assign({}, this.context, additional || {}));
     }
     name(name) {
       return this._withContext({
@@ -47,10 +50,10 @@ const createSchemaClass = plugins => {
       });
     }
     _first(validator) {
-      return this.init([validator].concat(this._validators), this.context);
+      return this._init([validator].concat(this._validators), this.context);
     }
     _last(validator) {
-      return this.init(this._validators.concat([validator]), this.context);
+      return this._init(this._validators.concat([validator]), this.context);
     }
     first(f) {
       return this._first({
@@ -122,7 +125,6 @@ const createSchemaClass = plugins => {
     }
   }
   plugins.forEach(plugin => addPlugin(Schema.prototype, plugin));
-  Schema.empty = new Schema();
   return Schema;
 }
 
