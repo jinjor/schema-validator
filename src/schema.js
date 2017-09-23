@@ -1,5 +1,6 @@
 class SchemaValidatorError extends Error {
   constructor(message) {
+    super();
     this.message = message;
   }
 }

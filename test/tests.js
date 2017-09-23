@@ -14,7 +14,7 @@ const throws = f => {
   try {
     value = f();
   } catch (e) {
-    if (e instanceof schema.SchemaValidatorError) {
+    if (!(e instanceof schema.SchemaValidatorError)) {
       throw new Error('unknown error was thrown: ' + e);
     }
     log('    ' + e.message);
