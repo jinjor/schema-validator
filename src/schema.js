@@ -82,6 +82,17 @@ const createSchemaClass = () => class Schema {
       return value;
     });
   }
+  when(checkerSchema, thenSchema, elseSchema) {
+    return this.then(value => {
+      if (checkerSchema._isValid(value)) {
+        return thenSchema;
+      }
+      if (elseSchema) {
+        return elseSchema;
+      }
+      return value;
+    });
+  }
   validate(value) {
     const newValue = this._validate(value);
     if (newValue instanceof Reject) {
@@ -91,7 +102,7 @@ const createSchemaClass = () => class Schema {
     }
     return newValue;
   }
-  isValid(value) {
+  _isValid(value) {
     const newValue = this._validate(value);
     return !(newValue instanceof Reject);
   }

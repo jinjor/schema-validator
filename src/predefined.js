@@ -89,27 +89,18 @@ module.exports = {
   key(key) {
     return this.init().then(value => value[key]).name(`${this.context.name}.${key}`);
   },
-  when(checkerSchema, thenSchema, elseSchema) {
-    return this.then(value => {
-      const isValid = checkerSchema.isValid(value);
-      if (isValid) {
-        return thenSchema;
-      }
-      if (elseSchema) {
-        return elseSchema;
-      }
-      return value;
-    });
-  },
-  field(key, valueSchema, checkerSchema) {
-    const objectSchema = this.key(key).then(_ => valueSchema).then(v => {
+  keyValue(key, valueSchema) {
+    return this.key(key).then(_ => valueSchema).then(v => {
       return {
         [key]: v
       };
     });
+  },
+  field(key, valueSchema, checkerSchema) {
+    const keyValueSchema = this.keyValue(key, valueSchema);
     const toMergeSchema = value => {
-      return objectSchema.then(v => {
-        return Object.assign({}, value, v);
+      return keyValueSchema.then(keyValue => {
+        return Object.assign({}, value, keyValue);
       });
     };
     if (checkerSchema) {
