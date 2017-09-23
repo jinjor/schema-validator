@@ -60,7 +60,7 @@ module.exports = {
     return this.typeOf('function');
   },
   object() {
-    return this.typeOf('object');
+    return this.shouldBe(`an object`, value => typeof value === 'object' && value !== null);
   },
   date() {
     return this.instanceOf(Date);
