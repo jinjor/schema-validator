@@ -102,21 +102,34 @@ module.exports = {
     });
   },
   field(key, valueSchema, checkerSchema) {
-    if (checkerSchema) {
-      return this.when(checkerSchema, this.init().field(key, valueSchema));
-    }
-    return this.then(value => {
-      return this.key(key).then(_ => valueSchema).then(v => {
-        return Object.assign({}, value, {
-          [key]: v
-        });
-      });
+    const objectSchema = this.key(key).then(_ => valueSchema).then(v => {
+      return {
+        [key]: v
+      };
     });
+    const toMergeSchema = value => {
+      return objectSchema.then(v => {
+        return Object.assign({}, value, v);
+      });
+    };
+    if (checkerSchema) {
+      return this.when(checkerSchema, this.init().then(toMergeSchema));
+    }
+    return this.then(toMergeSchema);
   },
   minLength(limit) {
     return this.check(_ => this.key('length').min(limit));
   },
   maxLength(limit) {
     return this.check(_ => this.key('length').max(limit));
+  },
+  arity(n) {
+    return this.check(_ => this.key('length').name('arity of ' + this.context.name).equal(n));
+  },
+  minArity(limit) {
+    return this.check(_ => this.key('length').name('arity of ' + this.context.name).min(limit));
+  },
+  maxArity(limit) {
+    return this.check(_ => this.key('length').name('arity of ' + this.context.name).max(limit));
   }
 };
