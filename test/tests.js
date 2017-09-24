@@ -18,10 +18,10 @@ const throws = (f, name, valueString) => {
       throw new Error('unknown error was thrown: ' + e);
     }
     if (name && !e.message.startsWith(name)) {
-      throw new Error(`name "${name}" is not included in message: ` + e.message);
+      throw new Error(`error message does not start with "${name}": ` + e.message);
     }
     if (valueString && !e.message.endsWith(valueString)) {
-      throw new Error(`value "${valueString}" is not included in message: ` + e.message);
+      throw new Error(`error message does not end with "${valueString}": ` + e.message);
     }
     log('    ' + e.message);
     return;
@@ -201,18 +201,18 @@ describe('schema-validator', function() {
     throws(() => sv.isHello().validate('bye'));
   });
   it('should throw correct error', function() {
-    throws(() => sv.number().name('foo').validate(), 'foo');
-    throws(() => sv.number().name('foo').required().validate(), 'foo');
-    throws(() => sv.number().required().name('foo').validate(), 'foo');
-    throws(() => sv.when(sv.string(), sv.number()).name('foo').validate(''), 'foo');
+    throws(() => sv.number().name('foo').validate(), 'foo', 'undefined');
+    throws(() => sv.number().name('foo').required().validate(), 'foo', 'undefined');
+    throws(() => sv.number().required().name('foo').validate(), 'foo', 'undefined');
+    throws(() => sv.when(sv.string(), sv.number()).name('foo').validate(''), 'foo', '""');
     throws(() => sv.array().minLength(1).name('foo').validate([]), 'foo.length', '[]');
     throws(() => sv.array().items(sv.string()).name('foo').validate([1]), 'foo[0]', '1');
     throws(() => sv.array().items(sv.string().minLength(1)).name('foo').validate(['1', '']), 'foo[1].length', '""');
     throws(() => sv.object().check(sv.key('a').string()).name('foo').validate({
       a: 1
-    }), 'foo.a');
+    }), 'foo.a', '1');
     throws(() => sv.object().field('a', sv.string()).name('foo').validate({
       a: 1
-    }), 'foo.a');
+    }), 'foo.a', '1');
   });
 });
