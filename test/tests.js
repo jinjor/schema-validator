@@ -162,6 +162,37 @@ describe('schema-validator', function() {
     assert.equal(1, sv.default(1).number().validate());
     assert.equal(1, sv.number().default(1).validate());
   });
+  it('should validate complex case', function() {
+    const retrySchema = sv.when(sv.number(),
+        sv.then(value => ({
+          count: value
+        })),
+        sv.field('count', sv.number())
+      )
+      .field('count', sv.integer().min(1))
+      .field('interval', sv.number().default(0));
+    const schema = sv.object().name('options')
+      .field('retry', retrySchema);
+    assert.deepEqual({
+      retry: {
+        count: 2,
+        interval: 0
+      }
+    }, schema.validate({
+      retry: 2
+    }));
+    assert.deepEqual({
+      retry: {
+        count: 2,
+        interval: 5
+      }
+    }, schema.validate({
+      retry: {
+        count: 2,
+        interval: 5
+      }
+    }));
+  });
   it('should read custom plugin', function() {
     assert.equal('hello', sv.isHello().validate('hello'));
     throws(() => sv.isHello().validate('bye'));
