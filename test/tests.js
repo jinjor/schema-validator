@@ -9,7 +9,7 @@ const log = verbose ? function() {
   console.log.apply(console, arguments);
 } : () => {};
 
-const throws = (f, name) => {
+const throws = (f, name, valueString) => {
   let value = null;
   try {
     value = f();
@@ -17,8 +17,11 @@ const throws = (f, name) => {
     if (!(e instanceof schema.SchemaValidatorError)) {
       throw new Error('unknown error was thrown: ' + e);
     }
-    if (name && !e.message.includes(name)) {
+    if (name && !e.message.startsWith(name)) {
       throw new Error(`name "${name}" is not included in message: ` + e.message);
+    }
+    if (valueString && !e.message.endsWith(valueString)) {
+      throw new Error(`value "${valueString}" is not included in message: ` + e.message);
     }
     log('    ' + e.message);
     return;
@@ -202,9 +205,9 @@ describe('schema-validator', function() {
     throws(() => sv.number().name('foo').required().validate(), 'foo');
     throws(() => sv.number().required().name('foo').validate(), 'foo');
     throws(() => sv.when(sv.string(), sv.number()).name('foo').validate(''), 'foo');
-    throws(() => sv.array().minLength(1).name('foo').validate([]), 'foo.length');
-    throws(() => sv.array().items(sv.string()).name('foo').validate([1]), 'foo[0]');
-    throws(() => sv.array().items(sv.string().minLength(1)).name('foo').validate([1, '']), 'foo[1].length');
+    throws(() => sv.array().minLength(1).name('foo').validate([]), 'foo.length', '[]');
+    throws(() => sv.array().items(sv.string()).name('foo').validate([1]), 'foo[0]', '1');
+    throws(() => sv.array().items(sv.string().minLength(1)).name('foo').validate(['1', '']), 'foo[1].length', '""');
     throws(() => sv.object().check(sv.key('a').string()).name('foo').validate({
       a: 1
     }), 'foo.a');

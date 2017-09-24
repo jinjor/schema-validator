@@ -78,16 +78,6 @@ module.exports = {
     return this.shouldBe(`defined`, value => !isUndefined(value));
   },
   // Structures
-  index(index) {
-    return this.empty().then(value => value[index]).name(`[${index}]`);
-  },
-  items(itemSchema) {
-    return this.then(value => {
-      return this._validateAll(value, (item, i) => {
-        return this.index(i).then(_ => itemSchema);
-      });
-    });
-  },
   key(key) {
     return this.empty().then(value => value[key]).name(`.${key}`);
   },

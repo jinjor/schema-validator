@@ -11,7 +11,7 @@ class Reject {
   }
   toError(value) {
     const name = this.name || 'value';
-    const stringValue = JSON.stringify(value);
+    const stringValue = JSON.stringify((typeof this.value === 'undefined') ? value : this.value);
     return new SchemaValidatorError(`${name} ${this.message}, but got ${stringValue}`);
   }
 }
@@ -96,6 +96,7 @@ const createSchemaClass = plugins => {
       const result = validateHelp(this._validators, 0, this.context.name, value);
       if (result instanceof Reject) {
         result.name = (this.context.name || '') + (result.name || '');
+        result.value = (typeof result.value === 'undefined') ? value : result.value;
       }
       return result;
     }
@@ -108,18 +109,25 @@ const createSchemaClass = plugins => {
       }
       return newValue;
     }
-    _validateAll(items, toItemSchema) {
-      const newItems = [];
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        const itemSchema = toItemSchema(item, i);
-        const result = itemSchema._validate(items);
-        if (result instanceof Reject) {
-          return result;
+    // these are here now for some reasons.
+    index(index) {
+      return this.empty().name(`[${index}]`);
+    }
+    items(itemSchema) {
+      return this.then(items => {
+        const newItems = [];
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          // const indexedSchema = this.index(i).then(_ => itemSchema);
+          const indexedSchema = this.empty().name(`[${i}]`).then(_ => itemSchema);
+          const result = indexedSchema._validate(item);
+          if (result instanceof Reject) {
+            return result;
+          }
+          newItems.push(item);
         }
-        newItems.push(item);
-      }
-      return newItems;
+        return newItems;
+      });
     }
   }
 
