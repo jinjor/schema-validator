@@ -119,19 +119,17 @@ const createSchemaClass = plugins => {
           if (newValue instanceof Schema) {
             return newValue._validate(value);
           }
-          if (newValue instanceof Reject) {
-            return newValue;
-          }
           return newValue;
         }
       });
     }
     items(itemSchema) {
       return this.then(items => {
+        const indexedSchemas = items.map((_, i) => {
+          return this.key(i, itemSchema);
+        });
         const newItems = [];
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i];
-          const indexedSchema = this.key(i, itemSchema);
+        for (let indexedSchema of indexedSchemas) {
           const result = indexedSchema._validate(items);
           if (result instanceof Reject) {
             return result;
