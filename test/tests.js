@@ -119,10 +119,10 @@ describe('schema-validator', function() {
       .field('b', sv.string().then(v => v.toUpperCase()))
       .field('c', sv.array().items(sv.number()))
       .field('d', sv.object(), sv.key('c').minLength(3))
-      .field('e', sv.boolean().default(true))
+      .field('e', sv.boolean().default_(true))
       .when(sv.key('e').truthy(),
         sv.field('f', sv.number())
-        .field('g', sv.number().default(100))
+        .field('g', sv.number().default_(100))
       )
 
     assert.deepEqual({
@@ -157,17 +157,17 @@ describe('schema-validator', function() {
     throws(() => sv.required().number().validate());
   });
   it('should validate default', function() {
-    assert.equal(0, sv.default(1).number().validate(0));
-    assert.equal(0, sv.number().default(1).validate(0));
-    assert.equal(1, sv.default(1).number().validate());
-    assert.equal(1, sv.number().default(1).validate());
+    assert.equal(0, sv.default_(1).number().validate(0));
+    assert.equal(0, sv.number().default_(1).validate(0));
+    assert.equal(1, sv.default_(1).number().validate());
+    assert.equal(1, sv.number().default_(1).validate());
   });
   it('should validate complex case', function() {
     const retrySchema = sv.try_(sv.number().then(value => ({
         count: value
       })))
       .field('count', sv.integer().min(1))
-      .field('interval', sv.number().default(0));
+      .field('interval', sv.number().default_(0));
     const schema = sv.object().name('options')
       .field('retry', retrySchema);
     assert.deepEqual({
