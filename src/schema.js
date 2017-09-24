@@ -57,9 +57,9 @@ const createSchemaClass = plugins => {
         _validate: wrapValidate(f)
       });
     }
-    then(f) {
+    then(f, name) {
       return this._last({
-        _validate: wrapValidate(f)
+        _validate: wrapValidate(f, name)
       });
     }
     _when(schema, f) {
@@ -110,17 +110,33 @@ const createSchemaClass = plugins => {
       return newValue;
     }
     // this is here now for some reasons.
+    key(key, valueSchema) {
+      return this.empty()._last({
+        _validate: value => {
+          const child = value[key];
+          const name = (typeof key === 'number') ? `[${key}]` : `.${key}`;
+          const newValue = (valueSchema || this.empty())._name(name)._validate(child);
+          if (newValue instanceof Schema) {
+            return newValue._validate(value);
+          }
+          if (newValue instanceof Reject) {
+            return newValue;
+          }
+          return newValue;
+        }
+      });
+    }
     items(itemSchema) {
       return this.then(items => {
         const newItems = [];
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
-          const indexedSchema = this.empty()._name(`[${i}]`).then(_ => itemSchema);
-          const result = indexedSchema._validate(item);
+          const indexedSchema = this.key(i, itemSchema);
+          const result = indexedSchema._validate(items);
           if (result instanceof Reject) {
             return result;
           }
-          newItems.push(item);
+          newItems.push(result);
         }
         return newItems;
       });

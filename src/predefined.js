@@ -78,11 +78,8 @@ module.exports = {
     return this.shouldBe(`defined`, value => !isUndefined(value));
   },
   // Structures
-  key(key) {
-    return this.empty().then(value => value[key])._name(`.${key}`);
-  },
   keyValue(key, valueSchema) {
-    return this.key(key).then(_ => valueSchema).then(v => {
+    return this.key(key, valueSchema).then(v => {
       return {
         [key]: v
       };
@@ -101,9 +98,9 @@ module.exports = {
     return this.then(toMergeSchema);
   },
   minLength(limit) {
-    return this.check(this.key('length').min(limit));
+    return this.check(this.key('length', this.empty().min(limit)));
   },
   maxLength(limit) {
-    return this.check(this.key('length').max(limit));
+    return this.check(this.key('length', this.empty().max(limit)))
   }
 };
