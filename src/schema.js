@@ -9,7 +9,8 @@ class Reject {
   constructor(message) {
     this.message = message;
   }
-  toError(name, value) {
+  toError(value) {
+    const name = this.name || 'value';
     const stringValue = JSON.stringify(value);
     return new SchemaValidatorError(`${name} ${this.message}, but got ${stringValue}`);
   }
@@ -26,9 +27,7 @@ const createSchemaClass = plugins => {
   class Schema {
     constructor(validators, context) {
       this._validators = validators || [];
-      this.context = context || {
-        name: 'value'
-      };
+      this.context = context || {};
     }
     empty() {
       return init();
@@ -65,7 +64,7 @@ const createSchemaClass = plugins => {
     }
     _when(schema, f) {
       return this.then(value => {
-        let result = schema._validate(value);
+        const result = schema._validate(value);
         return f(value, result);
       });
     }
@@ -77,16 +76,13 @@ const createSchemaClass = plugins => {
         return thenSchema;
       });
     }
-    _check(checkerSchema) {
+    check(checkerSchema) {
       return this._when(checkerSchema, (original, result) => {
         if (result instanceof Reject) {
           return result
         }
         return original;
       });
-    }
-    check(f) {
-      return this._check(this.empty().then(f));
     }
     try_(schema, catchSchema) {
       return this._when(schema, (original, result) => {
@@ -97,12 +93,16 @@ const createSchemaClass = plugins => {
       });
     }
     _validate(value) {
-      return validateHelp(this._validators, 0, this.context.name, value);
+      const result = validateHelp(this._validators, 0, this.context.name, value);
+      if (result instanceof Reject) {
+        result.name = (this.context.name || '') + (result.name || '');
+      }
+      return result;
     }
     validate(value) {
       const newValue = this._validate(value);
       if (newValue instanceof Reject) {
-        throw newValue.toError(this.context.name, value);
+        throw newValue.toError(value);
       } else if (newValue instanceof Break) {
         return newValue.value;
       }
@@ -113,7 +113,7 @@ const createSchemaClass = plugins => {
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
         const itemSchema = toItemSchema(item, i);
-        const result = itemSchema._validate(item);
+        const result = itemSchema._validate(items);
         if (result instanceof Reject) {
           return result;
         }

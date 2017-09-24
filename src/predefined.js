@@ -78,16 +78,18 @@ module.exports = {
     return this.shouldBe(`defined`, value => !isUndefined(value));
   },
   // Structures
+  index(index) {
+    return this.empty().then(value => value[index]).name(`[${index}]`);
+  },
   items(itemSchema) {
     return this.then(value => {
       return this._validateAll(value, (item, i) => {
-        const name = `${this.context.name}[${i}]`;
-        return itemSchema.name(name);
+        return this.index(i).then(_ => itemSchema);
       });
     });
   },
   key(key) {
-    return this.empty().then(value => value[key]).name(`${this.context.name}.${key}`);
+    return this.empty().then(value => value[key]).name(`.${key}`);
   },
   keyValue(key, valueSchema) {
     return this.key(key).then(_ => valueSchema).then(v => {
@@ -109,18 +111,18 @@ module.exports = {
     return this.then(toMergeSchema);
   },
   minLength(limit) {
-    return this.check(_ => this.key('length').min(limit));
+    return this.check(this.key('length').min(limit));
   },
   maxLength(limit) {
-    return this.check(_ => this.key('length').max(limit));
+    return this.check(this.key('length').max(limit));
   },
   arity(n) {
-    return this.check(_ => this.key('length').name('arity of ' + this.context.name).equal(n));
+    return this.check(this.key('length').name('arity of ' + this.context.name).equal(n));
   },
   minArity(limit) {
-    return this.check(_ => this.key('length').name('arity of ' + this.context.name).min(limit));
+    return this.check(this.key('length').name('arity of ' + this.context.name).min(limit));
   },
   maxArity(limit) {
-    return this.check(_ => this.key('length').name('arity of ' + this.context.name).max(limit));
+    return this.check(this.key('length').name('arity of ' + this.context.name).max(limit));
   }
 };

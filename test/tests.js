@@ -201,7 +201,15 @@ describe('schema-validator', function() {
     throws(() => sv.number().name('foo').validate(), 'foo');
     throws(() => sv.number().name('foo').required().validate(), 'foo');
     throws(() => sv.number().required().name('foo').validate(), 'foo');
-    throws(() => sv.when(sv.string(), sv.number().name('foo')).validate(''), 'foo');
     throws(() => sv.when(sv.string(), sv.number()).name('foo').validate(''), 'foo');
+    throws(() => sv.array().minLength(1).name('foo').validate([]), 'foo.length');
+    throws(() => sv.array().items(sv.string()).name('foo').validate([1]), 'foo[0]');
+    throws(() => sv.array().items(sv.string().minLength(1)).name('foo').validate([1, '']), 'foo[1].length');
+    throws(() => sv.object().check(sv.key('a').string()).name('foo').validate({
+      a: 1
+    }), 'foo.a');
+    throws(() => sv.object().field('a', sv.string()).name('foo').validate({
+      a: 1
+    }), 'foo.a');
   });
 });
