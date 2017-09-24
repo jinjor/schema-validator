@@ -219,5 +219,6 @@ describe('schema-validator', function() {
     throws(() => sv.object().field('c', sv.string()).validate({
       c: 1
     }, 'foo'), 'foo.c', '1');
+    throws(() => sv.object().field('d', sv.string()).validate({}, 'foo'), 'foo.d', 'undefined');
   });
 });

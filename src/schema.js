@@ -6,8 +6,15 @@ class SchemaValidatorError extends Error {
 }
 
 class Reject {
-  constructor(message) {
+  constructor(message, name, value) {
+    this.name = name;
+    this.value = value;
     this.message = message;
+  }
+  withMoreInfo(name, value) {
+    name = (name || '') + (this.name || '');
+    value = (typeof this.value === 'undefined') ? value : this.value;
+    return new Reject(this.message, name, value);
   }
   toError() {
     const name = this.name || 'value';
@@ -86,8 +93,7 @@ const createSchemaClass = plugins => {
     _validate(value, name) {
       const result = validateHelp(this._validators, 0, value);
       if (result instanceof Reject) {
-        result.name = (name || '') + (result.name || '');
-        result.value = (typeof result.value === 'undefined') ? value : result.value;
+        return result.withMoreInfo(name, value);
       }
       if (result instanceof Break) {
         return newValue.value;
