@@ -61,34 +61,30 @@ const createSchemaClass = plugins => {
         f: wrapValidate(f)
       });
     }
-    _when(schema, f) {
+    _when(schema, onSuccess, onError) {
       return this.then(value => {
         const result = schema._validate(value);
-        return f(value, result);
+        if (result instanceof Reject) {
+          return onError ? onError(value) : result;
+        }
+        return onSuccess ? onSuccess(result, value) : result;
       });
     }
     when(checkerSchema, thenSchema, elseSchema) {
-      return this._when(checkerSchema, (original, result) => {
-        if (result instanceof Reject) {
-          return elseSchema || original;
-        }
+      return this._when(checkerSchema, (result, original) => {
         return thenSchema;
+      }, original => {
+        return elseSchema || original;
       });
     }
-    check(checkerSchema) {
-      return this._when(checkerSchema, (original, result) => {
-        if (result instanceof Reject) {
-          return result
-        }
+    check(schema) {
+      return this._when(schema, (result, original) => {
         return original;
       });
     }
     try_(schema, catchSchema) {
-      return this._when(schema, (original, result) => {
-        if (result instanceof Reject) {
-          return catchSchema || original;
-        }
-        return result;
+      return this._when(schema, null, original => {
+        return catchSchema || original;
       });
     }
     _validate(value, name) {
