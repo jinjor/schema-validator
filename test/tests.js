@@ -208,9 +208,9 @@ describe('schema-validator', function() {
     throws(() => sv.array().minLength(1).name('foo').validate([]), 'foo.length', '[]');
     throws(() => sv.array().items(sv.string()).name('foo').validate([1]), 'foo[0]', '1');
     throws(() => sv.array().items(sv.string().minLength(1)).name('foo').validate(['1', '']), 'foo[1].length', '""');
-    throws(() => sv.object().check(sv.key('a').string()).name('foo').validate({
-      a: 1
-    }), 'foo.a', '1');
+    // throws(() => sv.object().check(sv.key('a').string()).name('foo').validate({
+    //   a: 1
+    // }), 'foo.a', '1');
     throws(() => sv.object().field('a', sv.string()).name('foo').validate({
       a: 1
     }), 'foo.a', '1');

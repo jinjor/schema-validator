@@ -9,9 +9,9 @@ class Reject {
   constructor(message) {
     this.message = message;
   }
-  toError(value) {
+  toError() {
     const name = this.name || 'value';
-    const stringValue = JSON.stringify((typeof this.value === 'undefined') ? value : this.value);
+    const stringValue = JSON.stringify(this.value);
     return new SchemaValidatorError(`${name} ${this.message}, but got ${stringValue}`);
   }
 }
@@ -103,22 +103,18 @@ const createSchemaClass = plugins => {
     validate(value) {
       const newValue = this._validate(value);
       if (newValue instanceof Reject) {
-        throw newValue.toError(value);
+        throw newValue.toError();
       } else if (newValue instanceof Break) {
         return newValue.value;
       }
       return newValue;
     }
-    // these are here now for some reasons.
-    index(index) {
-      return this.empty().name(`[${index}]`);
-    }
+    // this is here now for some reasons.
     items(itemSchema) {
       return this.then(items => {
         const newItems = [];
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
-          // const indexedSchema = this.index(i).then(_ => itemSchema);
           const indexedSchema = this.empty().name(`[${i}]`).then(_ => itemSchema);
           const result = indexedSchema._validate(item);
           if (result instanceof Reject) {
