@@ -25,9 +25,8 @@ class Break {
 // schema object
 const createSchemaClass = plugins => {
   class Schema {
-    constructor(validators, context) {
+    constructor(validators) {
       this._validators = validators || [];
-      this.context = context || {};
     }
     empty() {
       return init();
@@ -38,19 +37,11 @@ const createSchemaClass = plugins => {
     break_(value) {
       return new Break(value);
     }
-    _withContext(additional) {
-      return init(this._validators, Object.assign({}, this.context, additional || {}));
-    }
-    _name(name) {
-      return this._withContext({
-        name: name
-      });
-    }
     _first(validator) {
-      return init([validator].concat(this._validators), this.context);
+      return init([validator].concat(this._validators));
     }
     _last(validator) {
-      return init(this._validators.concat([validator]), this.context);
+      return init(this._validators.concat([validator]));
     }
     first(f) {
       return this._first({
@@ -92,20 +83,21 @@ const createSchemaClass = plugins => {
         return result;
       });
     }
-    _validate(value) {
-      const result = validateHelp(this._validators, 0, this.context.name, value);
+    _validate(value, name) {
+      const result = validateHelp(this._validators, 0, value);
       if (result instanceof Reject) {
-        result.name = (this.context.name || '') + (result.name || '');
+        result.name = (name || '') + (result.name || '');
         result.value = (typeof result.value === 'undefined') ? value : result.value;
+      }
+      if (result instanceof Break) {
+        return newValue.value;
       }
       return result;
     }
     validate(value, name) {
-      const newValue = this._name(name)._validate(value);
+      const newValue = this._validate(value, name);
       if (newValue instanceof Reject) {
         throw newValue.toError();
-      } else if (newValue instanceof Break) {
-        return newValue.value;
       }
       return newValue;
     }
@@ -115,11 +107,7 @@ const createSchemaClass = plugins => {
         f: value => {
           const child = value[key];
           const name = (typeof key === 'number') ? `[${key}]` : `.${key}`;
-          const newValue = valueSchema._name(name)._validate(child);
-          if (newValue instanceof Schema) {
-            return newValue._validate(value);
-          }
-          return newValue;
+          return valueSchema._validate(child, name);
         }
       });
     }
@@ -141,8 +129,8 @@ const createSchemaClass = plugins => {
     }
   }
 
-  function init(validators, context) {
-    return new Schema(validators, context);
+  function init(validators) {
+    return new Schema(validators);
   }
 
   function wrapValidate(f) {
@@ -158,7 +146,7 @@ const createSchemaClass = plugins => {
   return Schema;
 }
 
-function validateHelp(validators, i, name, value) {
+function validateHelp(validators, i, value) {
   if (i >= validators.length) {
     return value;
   }
@@ -169,7 +157,7 @@ function validateHelp(validators, i, name, value) {
   } else if (newValue instanceof Break) {
     return newValue.value;
   }
-  return validateHelp(validators, i + 1, name, newValue);
+  return validateHelp(validators, i + 1, newValue);
 }
 
 function addPlugin(prototype, plugin) {
