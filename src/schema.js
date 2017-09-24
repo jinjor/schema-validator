@@ -39,7 +39,7 @@ const createSchemaClass = plugins => {
     reject(message) {
       return new Reject(message);
     }
-    break (value) {
+    break_(value) {
       return new Break(value);
     }
     _withContext(additional) {
@@ -93,6 +93,15 @@ const createSchemaClass = plugins => {
           return elseSchema;
         }
         return value;
+      });
+    }
+    try_(schema, catchSchema) {
+      return this.then(value => {
+        let result = schema._validate(value);
+        if (result instanceof Reject) {
+          return catchSchema || value;
+        }
+        return result;
       });
     }
     validate(value) {

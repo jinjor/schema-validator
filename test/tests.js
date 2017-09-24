@@ -163,12 +163,9 @@ describe('schema-validator', function() {
     assert.equal(1, sv.number().default(1).validate());
   });
   it('should validate complex case', function() {
-    const retrySchema = sv.when(sv.number(),
-        sv.then(value => ({
-          count: value
-        })),
-        sv.field('count', sv.number())
-      )
+    const retrySchema = sv.try_(sv.number().then(value => ({
+        count: value
+      })))
       .field('count', sv.integer().min(1))
       .field('interval', sv.number().default(0));
     const schema = sv.object().name('options')

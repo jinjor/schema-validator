@@ -37,7 +37,7 @@ module.exports = {
     return this.first(value => isUndefined(value) ? this.reject('is required') : value);
   },
   default (defaultValue) {
-    return this.first(value => isUndefined(value) ? this.break(defaultValue) : value);
+    return this.first(value => isUndefined(value) ? this.break_(defaultValue) : value);
   },
   // Types
   typeOf(typeName) {
