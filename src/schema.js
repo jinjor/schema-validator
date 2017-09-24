@@ -7,18 +7,19 @@ class SchemaValidatorError extends Error {
 
 class Reject {
   constructor(message, name, value) {
-    this.name = name;
-    this.value = value;
     this.message = message;
+    this.name = name || [];
+    this.value = value || [];
   }
   withMoreInfo(name, value) {
-    name = (name || '') + (this.name || '');
-    value = (typeof this.value === 'undefined') ? value : this.value;
-    return new Reject(this.message, name, value);
+    return new Reject(this.message, [name].concat(this.name), this.value.length ? this.value : [value]);
   }
   toError() {
-    const name = this.name || 'value';
-    const stringValue = JSON.stringify(this.value);
+    let name = this.name.filter(n => !!n).join('');
+    if (!this.name[0]) {
+      name = 'value' + name;
+    }
+    const stringValue = JSON.stringify(this.value[0]);
     return new SchemaValidatorError(`${name} ${this.message}, but got ${stringValue}`);
   }
 }

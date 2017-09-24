@@ -220,5 +220,11 @@ describe('schema-validator', function() {
       c: 1
     }, 'foo'), 'foo.c', '1');
     throws(() => sv.object().field('d', sv.string()).validate({}, 'foo'), 'foo.d', 'undefined');
+    throws(() => sv.object().field('e', sv.string()).validate({}), 'value.e', 'undefined');
+    throws(() => sv.object().field('f', sv.object().field('g', sv.string())).validate({
+      f: {
+        g: 1
+      }
+    }, 'foo'), 'foo.f.g', '1');
   });
 });
