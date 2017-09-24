@@ -96,7 +96,7 @@ describe('schema-validator', function() {
   it('should validate optional field', function() {
     const schema = sv.object()
       .field('a', sv.number())
-      .field('b', sv.number(), sv.key('a').equal(1));
+      .field('b', sv.number(), sv.key('a', sv.equal(1)));
     assert.deepEqual({
       a: 1,
       b: 10
@@ -124,9 +124,9 @@ describe('schema-validator', function() {
       .field('a', sv.number().then(v => v * 2))
       .field('b', sv.string().then(v => v.toUpperCase()))
       .field('c', sv.array().items(sv.number()))
-      .field('d', sv.object(), sv.key('c').minLength(3))
+      .field('d', sv.object(), sv.key('c', sv.minLength(3)))
       .field('e', sv.boolean().default_(true))
-      .when(sv.key('e').truthy(),
+      .when(sv.key('e', sv.truthy()),
         sv.field('f', sv.number())
         .field('g', sv.number().default_(100))
       )

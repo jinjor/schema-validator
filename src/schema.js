@@ -54,12 +54,12 @@ const createSchemaClass = plugins => {
     }
     first(f) {
       return this._first({
-        _validate: wrapValidate(f)
+        f: wrapValidate(f)
       });
     }
-    then(f, name) {
+    then(f) {
       return this._last({
-        _validate: wrapValidate(f, name)
+        f: wrapValidate(f)
       });
     }
     _when(schema, f) {
@@ -112,10 +112,10 @@ const createSchemaClass = plugins => {
     // this is here now for some reasons.
     key(key, valueSchema) {
       return this.empty()._last({
-        _validate: value => {
+        f: value => {
           const child = value[key];
           const name = (typeof key === 'number') ? `[${key}]` : `.${key}`;
-          const newValue = (valueSchema || this.empty())._name(name)._validate(child);
+          const newValue = valueSchema._name(name)._validate(child);
           if (newValue instanceof Schema) {
             return newValue._validate(value);
           }
@@ -163,7 +163,7 @@ function validateHelp(validators, i, name, value) {
     return value;
   }
   const validator = validators[i];
-  const newValue = validator._validate(value);
+  const newValue = validator.f(value);
   if (newValue instanceof Reject) {
     return newValue;
   } else if (newValue instanceof Break) {
