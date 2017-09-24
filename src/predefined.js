@@ -4,33 +4,33 @@ function isUndefined(a) {
 
 module.exports = {
   // helper
-  shouldBe(message, isValid) {
+  is(message, isValid) {
     return this.then(value => isValid(value) ? value : this.reject('should be ' + message));
   },
-  shouldNotBe(message, isValid) {
+  isnt(message, isValid) {
     return this.then(value => isValid(value) ? value : this.reject('should not be ' + message));
   },
   // Comparison
   truthy() {
-    return this.shouldBe('truthy', value => value);
+    return this.is('truthy', value => value);
   },
   falsy() {
-    return this.shouldBe('falsy', value => !value);
+    return this.is('falsy', value => !value);
   },
   equal(expected) {
-    return this.shouldBe(`equal to ${expected}`, value => expected === value);
+    return this.is(`equal to ${expected}`, value => expected === value);
   },
   lt(limit) {
-    return this.shouldBe(`less than ${limit}`, value => value < limit);
+    return this.is(`less than ${limit}`, value => value < limit);
   },
   gt(limit) {
-    return this.shouldBe(`greater than ${limit}`, value => value > limit);
+    return this.is(`greater than ${limit}`, value => value > limit);
   },
   min(limit) {
-    return this.shouldNotBe(`less than ${limit}`, value => value >= limit);
+    return this.isnt(`less than ${limit}`, value => value >= limit);
   },
   max(limit) {
-    return this.shouldNotBe(`greater than ${limit}`, value => value <= limit);
+    return this.isnt(`greater than ${limit}`, value => value <= limit);
   },
   // Requisitions
   required() {
@@ -42,10 +42,10 @@ module.exports = {
   // Types
   typeOf(typeName) {
     const a = /[aeiou]/.test(typeName.charAt(0)) ? 'an' : 'a';
-    return this.shouldBe(`${a} ${typeName}`, value => typeof value === typeName);
+    return this.is(`${a} ${typeName}`, value => typeof value === typeName);
   },
   instanceOf(cls) {
-    return this.shouldBe(`instance of ${cls.name}`, value => value instanceof constructorFunc);
+    return this.is(`instance of ${cls.name}`, value => value instanceof constructorFunc);
   },
   boolean() {
     return this.typeOf('boolean');
@@ -60,22 +60,22 @@ module.exports = {
     return this.typeOf('function');
   },
   object() {
-    return this.shouldBe(`an object`, value => typeof value === 'object' && value !== null);
+    return this.is(`an object`, value => typeof value === 'object' && value !== null);
   },
   date() {
     return this.instanceOf(Date);
   },
   integer() {
-    return this.shouldBe(`an integer`, value => value % 1 === 0);
+    return this.is(`an integer`, value => value % 1 === 0);
   },
   array() {
-    return this.shouldBe(`an array`, value => Array.isArray(value));
+    return this.is(`an array`, value => Array.isArray(value));
   },
   arrayLike() {
-    return this.shouldBe(`an array-like object`, value => typeof value.length === 'number');
+    return this.is(`an array-like object`, value => typeof value.length === 'number');
   },
   defined() {
-    return this.shouldBe(`defined`, value => !isUndefined(value));
+    return this.is(`defined`, value => !isUndefined(value));
   },
   // Structures
   keyValue(key, valueSchema) {

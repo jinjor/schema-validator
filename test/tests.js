@@ -31,7 +31,7 @@ const throws = (f, name, valueString) => {
 
 const sv = SV({
   isHello() {
-    return this.then(value => (value === 'hello') ? value : this.reject('should be "hello"'));
+    return this.is("hello", value => value === 'hello');
   }
 });
 
@@ -203,8 +203,9 @@ describe('schema-validator', function() {
     throws(() => sv.number().validate(undefined, 'foo'), 'foo', 'undefined');
     throws(() => sv.number().required().validate(undefined, 'foo'), 'foo', 'undefined');
     throws(() => sv.number().required().validate(undefined, 'foo'), 'foo', 'undefined');
-    throws(() => sv.number().shouldBe('positive', n => n > 0).validate(-1, 'foo'), 'foo', '-1');
+    throws(() => sv.number().is('positive', n => n > 0).validate(-1, 'foo'), 'foo', '-1');
     throws(() => sv.number().then(n => n > 0 ? sv.integer() : n).validate(1.5, 'foo'), 'foo', '1.5');
+    throws(() => sv.number().when(sv.is('positive', n => n > 0), sv.integer()).validate(1.5, 'foo'), 'foo', '1.5');
     throws(() => sv.when(sv.string(), sv.number()).validate('', 'foo'), 'foo', '""');
     throws(() => sv.array().minLength(1).validate([], 'foo'), 'foo.length', '0');
     throws(() => sv.array().items(sv.string()).validate([1], 'foo'), 'foo[0]', '1');
