@@ -41,7 +41,7 @@ const createSchemaClass = plugins => {
     _withContext(additional) {
       return init(this._validators, Object.assign({}, this.context, additional || {}));
     }
-    name(name) {
+    _name(name) {
       return this._withContext({
         name: name
       });
@@ -100,8 +100,8 @@ const createSchemaClass = plugins => {
       }
       return result;
     }
-    validate(value) {
-      const newValue = this._validate(value);
+    validate(value, name) {
+      const newValue = this._name(name)._validate(value);
       if (newValue instanceof Reject) {
         throw newValue.toError();
       } else if (newValue instanceof Break) {
@@ -115,7 +115,7 @@ const createSchemaClass = plugins => {
         const newItems = [];
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
-          const indexedSchema = this.empty().name(`[${i}]`).then(_ => itemSchema);
+          const indexedSchema = this.empty()._name(`[${i}]`).then(_ => itemSchema);
           const result = indexedSchema._validate(item);
           if (result instanceof Reject) {
             return result;

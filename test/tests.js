@@ -120,7 +120,7 @@ describe('schema-validator', function() {
     }));
   });
   it('should validate object', function() {
-    const schema = sv.object().name('options')
+    const schema = sv.object()
       .field('a', sv.number().then(v => v * 2))
       .field('b', sv.string().then(v => v.toUpperCase()))
       .field('c', sv.array().items(sv.number()))
@@ -174,8 +174,7 @@ describe('schema-validator', function() {
       })))
       .field('count', sv.integer().min(1))
       .field('interval', sv.number().default_(0));
-    const schema = sv.object().name('options')
-      .field('retry', retrySchema);
+    const schema = sv.object().field('retry', retrySchema);
     assert.deepEqual({
       retry: {
         count: 2,
@@ -183,7 +182,7 @@ describe('schema-validator', function() {
       }
     }, schema.validate({
       retry: 2
-    }));
+    }, 'options'));
     assert.deepEqual({
       retry: {
         count: 2,
@@ -194,25 +193,25 @@ describe('schema-validator', function() {
         count: 2,
         interval: 5
       }
-    }));
+    }, 'options'));
   });
   it('should read custom plugin', function() {
     assert.equal('hello', sv.isHello().validate('hello'));
     throws(() => sv.isHello().validate('bye'));
   });
   it('should throw correct error', function() {
-    throws(() => sv.number().name('foo').validate(), 'foo', 'undefined');
-    throws(() => sv.number().name('foo').required().validate(), 'foo', 'undefined');
-    throws(() => sv.number().required().name('foo').validate(), 'foo', 'undefined');
-    throws(() => sv.when(sv.string(), sv.number()).name('foo').validate(''), 'foo', '""');
-    throws(() => sv.array().minLength(1).name('foo').validate([]), 'foo.length', '[]');
-    throws(() => sv.array().items(sv.string()).name('foo').validate([1]), 'foo[0]', '1');
-    throws(() => sv.array().items(sv.string().minLength(1)).name('foo').validate(['1', '']), 'foo[1].length', '""');
+    throws(() => sv.number().validate(undefined, 'foo'), 'foo', 'undefined');
+    throws(() => sv.number().required().validate(undefined, 'foo'), 'foo', 'undefined');
+    throws(() => sv.number().required().validate(undefined, 'foo'), 'foo', 'undefined');
+    throws(() => sv.when(sv.string(), sv.number()).validate('', 'foo'), 'foo', '""');
+    throws(() => sv.array().minLength(1).validate([], 'foo'), 'foo.length', '[]');
+    throws(() => sv.array().items(sv.string()).validate([1], 'foo'), 'foo[0]', '1');
+    throws(() => sv.array().items(sv.string().minLength(1)).validate(['1', ''], 'foo'), 'foo[1].length', '""');
     // throws(() => sv.object().check(sv.key('a').string()).name('foo').validate({
     //   a: 1
     // }), 'foo.a', '1');
-    throws(() => sv.object().field('a', sv.string()).name('foo').validate({
+    throws(() => sv.object().field('a', sv.string()).validate({
       a: 1
-    }), 'foo.a', '1');
+    }, 'foo'), 'foo.a', '1');
   });
 });

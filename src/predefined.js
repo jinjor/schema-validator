@@ -79,7 +79,7 @@ module.exports = {
   },
   // Structures
   key(key) {
-    return this.empty().then(value => value[key]).name(`.${key}`);
+    return this.empty().then(value => value[key])._name(`.${key}`);
   },
   keyValue(key, valueSchema) {
     return this.key(key).then(_ => valueSchema).then(v => {
@@ -105,14 +105,5 @@ module.exports = {
   },
   maxLength(limit) {
     return this.check(this.key('length').max(limit));
-  },
-  arity(n) {
-    return this.check(this.key('length').name('arity of ' + this.context.name).equal(n));
-  },
-  minArity(limit) {
-    return this.check(this.key('length').name('arity of ' + this.context.name).min(limit));
-  },
-  maxArity(limit) {
-    return this.check(this.key('length').name('arity of ' + this.context.name).max(limit));
   }
 };
