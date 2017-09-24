@@ -9,13 +9,16 @@ const log = verbose ? function() {
   console.log.apply(console, arguments);
 } : () => {};
 
-const throws = f => {
+const throws = (f, name) => {
   let value = null;
   try {
     value = f();
   } catch (e) {
     if (!(e instanceof schema.SchemaValidatorError)) {
       throw new Error('unknown error was thrown: ' + e);
+    }
+    if (name && !e.message.includes(name)) {
+      throw new Error(`name "${name}" is not included in message: ` + e.message);
     }
     log('    ' + e.message);
     return;
@@ -193,5 +196,12 @@ describe('schema-validator', function() {
   it('should read custom plugin', function() {
     assert.equal('hello', sv.isHello().validate('hello'));
     throws(() => sv.isHello().validate('bye'));
+  });
+  it('should throw correct error', function() {
+    throws(() => sv.number().name('foo').validate(), 'foo');
+    throws(() => sv.number().name('foo').required().validate(), 'foo');
+    throws(() => sv.number().required().name('foo').validate(), 'foo');
+    throws(() => sv.when(sv.string(), sv.number().name('foo')).validate(''), 'foo');
+    throws(() => sv.when(sv.string(), sv.number()).name('foo').validate(''), 'foo');
   });
 });
