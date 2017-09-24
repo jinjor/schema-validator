@@ -30,11 +30,8 @@ const createSchemaClass = plugins => {
         name: 'value'
       };
     }
-    _init(validators, context) {
-      return new Schema(validators, context);
-    }
     empty() {
-      return this._init();
+      return init();
     }
     reject(message) {
       return new Reject(message);
@@ -43,7 +40,7 @@ const createSchemaClass = plugins => {
       return new Break(value);
     }
     _withContext(additional) {
-      return this._init(this._validators, Object.assign({}, this.context, additional || {}));
+      return init(this._validators, Object.assign({}, this.context, additional || {}));
     }
     name(name) {
       return this._withContext({
@@ -51,58 +48,56 @@ const createSchemaClass = plugins => {
       });
     }
     _first(validator) {
-      return this._init([validator].concat(this._validators), this.context);
+      return init([validator].concat(this._validators), this.context);
     }
     _last(validator) {
-      return this._init(this._validators.concat([validator]), this.context);
+      return init(this._validators.concat([validator]), this.context);
     }
     first(f) {
       return this._first({
-        _validate: f
+        _validate: wrapValidate(f)
       });
     }
     then(f) {
       return this._last({
-        _validate: value => {
-          const newValue = f(value);
-          if (newValue instanceof Schema) {
-            return newValue._validate(value);
-          }
-          return newValue;
-        }
+        _validate: wrapValidate(f)
       });
     }
-    check(f) {
+    _when(schema, f) {
       return this.then(value => {
-        let result = f(value);
-        if (result instanceof Schema) {
-          result = result._validate(value);
-        }
-        if (result instanceof Reject) {
-          return result;
-        }
-        return value;
+        let result = schema._validate(value);
+        return f(value, result);
       });
     }
     when(checkerSchema, thenSchema, elseSchema) {
-      return this.then(value => {
-        if (checkerSchema._isValid(value)) {
-          return thenSchema;
+      return this._when(checkerSchema, (original, result) => {
+        if (result instanceof Reject) {
+          return elseSchema || original;
         }
-        if (elseSchema) {
-          return elseSchema;
-        }
-        return value;
+        return thenSchema;
       });
     }
-    try_(schema, catchSchema) {
-      return this.then(value => {
-        let result = schema._validate(value);
+    _check(checkerSchema) {
+      return this._when(checkerSchema, (original, result) => {
         if (result instanceof Reject) {
-          return catchSchema || value;
+          return result
+        }
+        return original;
+      });
+    }
+    check(f) {
+      return this._check(this.empty().then(f));
+    }
+    try_(schema, catchSchema) {
+      return this._when(schema, (original, result) => {
+        if (result instanceof Reject) {
+          return catchSchema || original;
         }
         return result;
       });
+    }
+    _validate(value) {
+      return validateHelp(this._validators, 0, this.context.name, value);
     }
     validate(value) {
       const newValue = this._validate(value);
@@ -113,18 +108,11 @@ const createSchemaClass = plugins => {
       }
       return newValue;
     }
-    _isValid(value) {
-      const newValue = this._validate(value);
-      return !(newValue instanceof Reject);
-    }
-    _validate(value) {
-      return validateHelp(this._validators, 0, this.context.name, value);
-    }
-    _validateAll(items, f) {
+    _validateAll(items, toItemSchema) {
       const newItems = [];
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-        const itemSchema = f(item, i);
+        const itemSchema = toItemSchema(item, i);
         const result = itemSchema._validate(item);
         if (result instanceof Reject) {
           return result;
@@ -133,6 +121,20 @@ const createSchemaClass = plugins => {
       }
       return newItems;
     }
+  }
+
+  function init(validators, context) {
+    return new Schema(validators, context);
+  }
+
+  function wrapValidate(f) {
+    return value => {
+      const newValue = f(value);
+      if (newValue instanceof Schema) {
+        return newValue._validate(value);
+      }
+      return newValue;
+    };
   }
   plugins.forEach(plugin => addPlugin(Schema.prototype, plugin));
   return Schema;
