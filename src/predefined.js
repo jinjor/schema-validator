@@ -77,7 +77,21 @@ module.exports = {
   defined() {
     return this.is(`defined`, value => !isUndefined(value));
   },
-  // Structures
+  // Array(-like)
+  minLength(limit) {
+    return this.check(this.key('length', this.empty().min(limit)));
+  },
+  maxLength(limit) {
+    return this.check(this.key('length', this.empty().max(limit)))
+  },
+  items(itemSchema) {
+    return this.flatten(items => {
+      return items.map((_, i) => {
+        return this.key(i, itemSchema);
+      });
+    });
+  },
+  // Object
   keyValue(key, valueSchema) {
     return this.key(key, valueSchema).then(v => {
       return {
@@ -96,11 +110,5 @@ module.exports = {
       return this.when(checkerSchema, this.empty().then(toMergeSchema));
     }
     return this.then(toMergeSchema);
-  },
-  minLength(limit) {
-    return this.check(this.key('length', this.empty().min(limit)));
-  },
-  maxLength(limit) {
-    return this.check(this.key('length', this.empty().max(limit)))
   }
 };

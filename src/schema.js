@@ -104,24 +104,20 @@ const createSchemaClass = plugins => {
       }
       return newValue;
     }
-    // this is here now for some reasons.
     key(key, valueSchema) {
+      const name = (typeof key === 'number') ? `[${key}]` : `.${key}`;
       return this.empty()._last({
         f: value => {
           const child = value[key];
-          const name = (typeof key === 'number') ? `[${key}]` : `.${key}`;
           return valueSchema._validate(child, name);
         }
       });
     }
-    items(itemSchema) {
-      return this.then(items => {
-        const indexedSchemas = items.map((_, i) => {
-          return this.key(i, itemSchema);
-        });
+    flatten(toKeySchemas) {
+      return this.then(value => {
         const newItems = [];
-        for (let indexedSchema of indexedSchemas) {
-          const result = indexedSchema._validate(items);
+        for (let schema of toKeySchemas(value)) {
+          const result = schema._validate(value);
           if (result instanceof Reject) {
             return result;
           }
