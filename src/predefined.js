@@ -94,7 +94,7 @@ module.exports = function(original) {
     },
     // Object
     keyValue(key, valueSchema) {
-      return this.key(key, valueSchema).then(v => {
+      return this.key(key, valueSchema).map(v => {
         return {
           [key]: v
         };
@@ -103,7 +103,7 @@ module.exports = function(original) {
     field(key, valueSchema, checkerSchema) {
       const keyValueSchema = this.keyValue(key, valueSchema);
       const toMergeSchema = value => {
-        return keyValueSchema.then(keyValue => {
+        return keyValueSchema.map(keyValue => {
           return Object.assign({}, value, keyValue);
         });
       };

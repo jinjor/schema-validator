@@ -62,10 +62,16 @@ const create = plugins => {
       });
     }
     _satisfy(message, isValid) {
+      return this._when2(isValid, null, _ => sv.reject(message));
+    }
+    map(f) {
+      return this._when2(_ => true, f);
+    }
+    _when2(isValid, then, else_) {
       return this._last({
         if_: isValid,
-        then: value => value,
-        else_: _ => sv.reject(message)
+        then: then,
+        else_: else_
       });
     }
     _when(schema, onSuccess, onError) {
@@ -158,7 +164,7 @@ function validateHelp(validators, i, value) {
   if (validator.if_) {
     const isValid = validator.if_(value);
     if (isValid) {
-      const newValue = validator.then(value);
+      const newValue = validator.then ? validator.then(value) : value;
       return validateHelp(validators, i + 1, newValue);
     } else {
       return validator.else_(value);
