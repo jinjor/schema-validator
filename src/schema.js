@@ -36,6 +36,10 @@ const createSchemaClass = plugins => {
     constructor(validators) {
       this._validators = validators || [];
     }
+    extend(plugin) {
+      const cls = createSchemaClass(plugins.concat([plugin]));
+      return new cls();
+    }
     empty() {
       return init();
     }

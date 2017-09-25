@@ -1,6 +1,7 @@
 const chai = require('chai');
 const assert = chai.assert;
-const SV = require('../src/index.js');
+const sv = require('../src/index.js');
+const original = sv;
 const schema = require('../src/schema.js');
 
 const verbose = process.argv[3] === '-v'; // npm test -- -v
@@ -28,12 +29,6 @@ const throws = (f, name, valueString) => {
   }
   throw new Error('unexpectedly succeeded: ' + JSON.stringify(value, null, 2));
 }
-
-const sv = SV({
-  isHello() {
-    return this.is("hello", value => value === 'hello');
-  }
-});
 
 describe('schema-validator', function() {
   afterEach(function() {
@@ -195,7 +190,12 @@ describe('schema-validator', function() {
       }
     }, 'options'));
   });
-  it('should read custom plugin', function() {
+  it('should be extended', function() {
+    const sv = original.extend({
+      isHello() {
+        return this.is("hello", value => value === 'hello');
+      }
+    });
     assert.equal('hello', sv.isHello().validate('hello'));
     throws(() => sv.isHello().validate('bye'));
   });
@@ -228,7 +228,7 @@ describe('schema-validator', function() {
     }, 'foo'), 'foo.f.g', '1');
   });
   it('have correct example', function() {
-    const sv = SV({
+    const sv = original.extend({
       allowedMethod(methods) {
         const message = `one of [${methods}]`;
         return this.is(message, value => methods.includes(value));

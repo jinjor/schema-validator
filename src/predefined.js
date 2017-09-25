@@ -2,7 +2,7 @@ function isUndefined(a) {
   return typeof a === 'undefined';
 }
 
-module.exports = {
+module.exports = sv => sv.extend({
   // helper
   is(message, isValid) {
     return this.then(value => isValid(value) ? value : this.reject('should be ' + message));
@@ -111,4 +111,4 @@ module.exports = {
     }
     return this.then(toMergeSchema);
   }
-};
+});
