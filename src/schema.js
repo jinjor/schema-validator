@@ -142,6 +142,7 @@ const create = plugins => {
     };
   }
   plugins.forEach(plugin => addPlugin(Schema.prototype, plugin));
+  // empty schema instance
   const sv = new Schema();
   return sv;
 }

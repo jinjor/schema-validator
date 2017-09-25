@@ -6,10 +6,10 @@ module.exports = function(original) {
   const sv = original.extend({
     // helper
     is(message, isValid) {
-      return this.then(value => isValid(value) ? value : this.reject('should be ' + message));
+      return this.then(value => isValid(value) ? value : sv.reject('should be ' + message));
     },
     isnt(message, isValid) {
-      return this.then(value => isValid(value) ? value : this.reject('should not be ' + message));
+      return this.then(value => isValid(value) ? value : sv.reject('should not be ' + message));
     },
     // Comparison
     truthy() {
@@ -35,10 +35,10 @@ module.exports = function(original) {
     },
     // Requisitions
     required() {
-      return this.first(value => isUndefined(value) ? this.reject('is required') : value);
+      return this.first(value => isUndefined(value) ? sv.reject('is required') : value);
     },
     default_(defaultValue) {
-      return this.first(value => isUndefined(value) ? this.break_(defaultValue) : value);
+      return this.first(value => isUndefined(value) ? sv.break_(defaultValue) : value);
     },
     // Types
     typeOf(typeName) {
