@@ -93,7 +93,14 @@ const create = plugins => {
       }));
     }
     _validate(value, name) {
-      const result = validateHelp(this._validators, 0, value, Schema);
+      let result = null;
+      if (this.type && this._validators.length === 1) {
+        console.log('migrated');
+        result = validateHelpHelp(this, value, Schema)
+      } else {
+        console.log('deplicated');
+        result = validateHelp(this._validators, 0, value, Schema);
+      }
       if (result instanceof Reject) {
         return result.withMoreInfo(name, value);
       }
