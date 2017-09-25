@@ -4,12 +4,21 @@ function isUndefined(a) {
 
 module.exports = function(original) {
   const sv = original.extend({
-    // helper
+    // Satisfaction
+    _satisfy(message, isValid) {
+      return this.then(value => {
+        if (isValid(value)) {
+          return value;
+        } else {
+          return sv.reject(message);
+        }
+      });
+    },
     is(message, isValid) {
-      return this.then(value => isValid(value) ? value : sv.reject('should be ' + message));
+      return this._satisfy('should be ' + message, isValid);
     },
     isnt(message, isValid) {
-      return this.then(value => isValid(value) ? value : sv.reject('should not be ' + message));
+      return this._satisfy('should not be ' + message, isValid);
     },
     // Comparison
     truthy() {
