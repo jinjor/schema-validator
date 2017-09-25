@@ -53,22 +53,22 @@ const create = plugins => {
     }
     first(f) {
       return this._first({
-        f: wrapValidate(f)
+        type: 'if',
+        then: f
       });
     }
     then(f) {
-      return this._last({
-        f: wrapValidate(f)
-      });
+      return this._when2(null, f);
     }
     _satisfy(message, isValid) {
       return this._when2(isValid, null, _ => sv.reject(message));
     }
     map(f) {
-      return this._when2(_ => true, f);
+      return this._when2(null, f);
     }
     _when2(isValid, then, else_) {
       return this._last({
+        type: 'if',
         if_: isValid,
         then: then,
         else_: else_
@@ -101,7 +101,7 @@ const create = plugins => {
       });
     }
     _validate(value, name) {
-      const result = validateHelp(this._validators, 0, value);
+      const result = validateHelp(this._validators, 0, value, Schema);
       if (result instanceof Reject) {
         return result.withMoreInfo(name, value);
       }
@@ -120,14 +120,15 @@ const create = plugins => {
     key(key, valueSchema) {
       const name = (typeof key === 'number') ? `[${key}]` : `.${key}`;
       return sv._last({
-        f: value => {
+        type: 'if',
+        then: value => {
           const child = value[key];
           return valueSchema._validate(child, name);
         }
       });
     }
     flatten(toKeySchemas) {
-      return this.then(value => {
+      return this.map(value => {
         const newItems = [];
         for (let schema of toKeySchemas(value)) {
           const result = schema._validate(value);
@@ -141,42 +142,46 @@ const create = plugins => {
     }
   }
 
-  function wrapValidate(f) {
-    return value => {
-      const newValue = f(value);
-      if (newValue instanceof Schema) {
-        return newValue._validate(value);
-      }
-      return newValue;
-    };
-  }
+
   plugins.forEach(plugin => addPlugin(Schema.prototype, plugin));
   // empty schema instance
   const sv = new Schema();
   return sv;
 }
 
-function validateHelp(validators, i, value) {
+function wrapValidate(f, Schema) {
+  if (!Schema) {
+    throw new Error('Schema not found');
+  }
+  return value => {
+    const newValue = f(value);
+    if (newValue instanceof Schema) {
+      return newValue._validate(value);
+    }
+    return newValue;
+  };
+}
+
+function validateHelp(validators, i, value, Schema) {
   if (i >= validators.length) {
     return value;
   }
   const validator = validators[i];
-  if (validator.if_) {
-    const isValid = validator.if_(value);
-    if (isValid) {
-      const newValue = validator.then ? validator.then(value) : value;
-      return validateHelp(validators, i + 1, newValue);
+  if (validator.type === 'if') {
+    const valid = validator.if_ ? validator.if_(value) : true;
+    if (valid) {
+      const newValue = wrapValidate(validator.then || (value => value), Schema)(value);
+      if (newValue instanceof Reject) {
+        return newValue;
+      } else if (newValue instanceof Break) {
+        return newValue.value;
+      }
+      return validateHelp(validators, i + 1, newValue, Schema);
     } else {
       return validator.else_(value);
     }
   }
-  const newValue = validator.f(value);
-  if (newValue instanceof Reject) {
-    return newValue;
-  } else if (newValue instanceof Break) {
-    return newValue.value;
-  }
-  return validateHelp(validators, i + 1, newValue);
+  throw 'unexpected type';
 }
 
 function addPlugin(prototype, plugin) {
