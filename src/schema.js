@@ -61,6 +61,13 @@ const create = plugins => {
         f: wrapValidate(f)
       });
     }
+    _satisfy(message, isValid) {
+      return this._last({
+        if_: isValid,
+        then: value => value,
+        else_: _ => sv.reject(message)
+      });
+    }
     _when(schema, onSuccess, onError) {
       return this.then(value => {
         const result = schema._validate(value);
@@ -148,6 +155,15 @@ function validateHelp(validators, i, value) {
     return value;
   }
   const validator = validators[i];
+  if (validator.if_) {
+    const isValid = validator.if_(value);
+    if (isValid) {
+      const newValue = validator.then(value);
+      return validateHelp(validators, i + 1, newValue);
+    } else {
+      return validator.else_(value);
+    }
+  }
   const newValue = validator.f(value);
   if (newValue instanceof Reject) {
     return newValue;

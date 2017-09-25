@@ -5,15 +5,6 @@ function isUndefined(a) {
 module.exports = function(original) {
   const sv = original.extend({
     // Satisfaction
-    _satisfy(message, isValid) {
-      return this.then(value => {
-        if (isValid(value)) {
-          return value;
-        } else {
-          return sv.reject(message);
-        }
-      });
-    },
     is(message, isValid) {
       return this._satisfy('should be ' + message, isValid);
     },
