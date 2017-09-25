@@ -53,68 +53,48 @@ const create = plugins => {
     }
     first(f) {
       return this._first({
-        type: 'function',
+        type: 'func',
         f: f
       });
     }
     then(f) {
       return this._last({
-        type: 'function',
+        type: 'func',
         f: f
       });
     }
     _satisfy(message, isValid) {
-      return this._when2(isValid, new Schema([{
-        type: 'function',
-        f: original => original
-      }]), sv.reject(message));
+      return this._when(F(value => isValid(value) || sv.reject()), Identity, sv.reject(message));
     }
     map(f) {
       return this._last({
-        type: 'function',
+        type: 'func',
         f: f
       });
     }
-    _when2(isValid, then, else_) {
+    _when(schema, then, else_) {
       return this._last({
-        type: 'if2',
-        if_: new Schema([{
-          type: 'function',
-          f: isValid || (_ => true)
-        }]),
-        then: then || new Schema([{
-          type: 'function',
-          f: original => original
-        }]),
-        else_: else_
-      });
-    }
-    _when(schema, onSuccess, onError) {
-      return this._last({
-        type: 'if2',
+        type: 'if',
         if_: schema || True,
-        then: new Schema([{
-          type: 'function',
-          f: onSuccess || (original => original)
-        }]),
-        else_: onError
+        then: then,
+        else_: else_
       });
     }
     when(checkerSchema, thenSchema, elseSchema) {
       return this._last({
-        type: 'if2',
+        type: 'if',
         if_: checkerSchema || True,
         then: thenSchema,
         else_: elseSchema
       });
     }
     check(schema) {
-      return this._when(schema, original => original);
+      return this._when(schema, Identity);
     }
     try_(schema, catchSchema) {
-      return this._when(schema, null, original => {
+      return this._when(schema, Identity, F(original => {
         return catchSchema || original;
-      });
+      }));
     }
     _validate(value, name) {
       const result = validateHelp(this._validators, 0, value, Schema);
@@ -136,18 +116,12 @@ const create = plugins => {
     key(key, valueSchema) {
       const name = (typeof key === 'number') ? `[${key}]` : `.${key}`;
       return sv._last({
-        type: 'if2',
-        if_: new Schema([{
-          type: 'value',
-          value: true
-        }]),
-        then: new Schema([{
-          type: 'function',
-          f: value => {
-            const child = value[key];
-            return valueSchema._validate(child, name);
-          }
-        }]),
+        type: 'if',
+        if_: True,
+        then: F(value => {
+          const child = value[key];
+          return valueSchema._validate(child, name);
+        }),
         else_: sv.reject('else')
       });
     }
@@ -165,29 +139,20 @@ const create = plugins => {
       });
     }
   }
+  const F = f => new Schema([{
+    type: 'func',
+    f: f
+  }]);
   const True = new Schema([{
     type: 'value',
     value: true
   }]);
+  const Identity = F(v => v);
 
   plugins.forEach(plugin => addPlugin(Schema.prototype, plugin));
   // empty schema instance
   const sv = new Schema();
   return sv;
-}
-
-function wrapValidate(f, Schema) {
-  if (!Schema) {
-    throw new Error('Schema not found');
-  }
-  return value => {
-    const newValue = f(value);
-    if (newValue instanceof Schema) {
-      return wrapValidate(newValue._validate.bind(newValue), Schema)(value);
-      // return newValue._validate(value);
-    }
-    return newValue;
-  };
 }
 
 function validateHelp(validators, i, value, Schema) {
@@ -209,21 +174,20 @@ function validateHelpHelp(validator, value, Schema) {
   if (validator instanceof Break) {
     return validator.value;
   }
-  if (validator.type === 'if2') {
-    const valid = validator.if_._validate(value);
+  if (validator.type === 'if') {
+    const valid = wrapValidate2(validator.if_, Schema, value);
     if (!(valid instanceof Reject)) {
-      // const newValue = validator.then._validate(value);
       return wrapValidate2(validator.then, Schema, value);
     } else {
-      // const newValue = validator.else_._validate(value);
-      return wrapValidate2(newValue.else_, Schema, value);
+      return wrapValidate2(validator.else_, Schema, value);
     }
   } else if (validator.type === 'value') {
     return validator.value;
-  } else if (validator.type === 'function') {
+  } else if (validator.type === 'func') {
     const newValue = validator.f(value);
     return wrapValidate2(newValue, Schema, value);
   }
+  console.log(validator);
   throw 'type is not specified';
 }
 
