@@ -227,4 +227,23 @@ describe('schema-validator', function() {
       }
     }, 'foo'), 'foo.f.g', '1');
   });
+  it('have correct example', function() {
+    const sv = SV({
+      allowedMethod(methods) {
+        const message = `one of [${methods}]`;
+        return this.is(message, value => methods.includes(value));
+      }
+    });
+    const schema = sv.object()
+      .field('host', sv.string().required())
+      .field('method', sv.allowedMethod(['GET', 'POST']).default_('GET'))
+      .field('path', sv.string().default_('/'))
+      .field('timeout', sv.integer().min(0).default_(20 * 1000));
+
+    throws(() => schema.validate({
+      host: 'example.com',
+      method: 'DELETE',
+      timeout: 10 * 1000
+    }, 'options'), 'options.method', '"DELETE"');
+  });
 });
