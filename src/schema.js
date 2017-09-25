@@ -34,7 +34,11 @@ class Break {
 const create = plugins => {
   class Schema {
     constructor(validators) {
-      this._validators = validators || [];
+      if (Array.isArray(validators)) {
+        this._validators = validators;
+      } else {
+        this._validators = validators ? [validators] : [];
+      }
     }
     extend(plugin) {
       return create(plugins.concat([plugin]));
@@ -64,21 +68,7 @@ const create = plugins => {
       });
     }
     _satisfy(message, isValid) {
-      return this._when(F(value => isValid(value) || sv.reject()), Identity, true);
-    }
-    map(f) {
-      return this._last({
-        type: 'func',
-        f: f
-      });
-    }
-    _when(schema, then, else_) {
-      return this._last({
-        type: 'if',
-        if_: schema || True,
-        then: then,
-        else_: else_, // true => return on reject
-      });
+      return this.when(F(value => isValid(value) || sv.reject(message)), Identity, true);
     }
     when(checkerSchema, thenSchema, elseSchema) {
       return this._last({
@@ -89,10 +79,10 @@ const create = plugins => {
       });
     }
     check(schema) {
-      return this._when(schema, Identity, true);
+      return this.when(schema, Identity, true);
     }
     try_(schema, catchSchema) {
-      return this._when(schema, Identity, F(original => {
+      return this.when(schema, Identity, F(original => {
         return catchSchema || original;
       }));
     }
@@ -124,7 +114,7 @@ const create = plugins => {
       });
     }
     flatten(toKeySchemas) {
-      return this.map(value => {
+      return this.then(value => {
         const newItems = [];
         for (let schema of toKeySchemas(value)) {
           const result = schema._validate(value);
@@ -137,14 +127,14 @@ const create = plugins => {
       });
     }
   }
-  const F = f => new Schema([{
+  const F = f => new Schema({
     type: 'func',
     f: f
-  }]);
-  const True = new Schema([{
+  });
+  const True = new Schema({
     type: 'value',
     value: true
-  }]);
+  });
   const Identity = F(v => v);
 
   plugins.forEach(plugin => addPlugin(Schema.prototype, plugin));
