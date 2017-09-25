@@ -104,26 +104,16 @@ const create = plugins => {
       return newValue;
     }
     key(key, valueSchema) {
-      const name = (typeof key === 'number') ? `[${key}]` : `.${key}`;
       return sv._last({
-        type: 'func',
-        f: value => {
-          const child = value[key];
-          return valueSchema._validate(child, name);
-        }
+        type: 'key',
+        key: key,
+        value: valueSchema
       });
     }
-    flatten(toKeySchemas) {
-      return this.then(value => {
-        const newItems = [];
-        for (let schema of toKeySchemas(value)) {
-          const result = schema._validate(value);
-          if (result instanceof Reject) {
-            return result;
-          }
-          newItems.push(result);
-        }
-        return newItems;
+    items(itemSchema) {
+      return this._last({
+        type: 'array',
+        item: itemSchema
       });
     }
   }
@@ -176,13 +166,30 @@ function validateHelpHelp(validator, value, Schema) {
   } else if (validator.type === 'func') {
     const newValue = validator.f(value);
     return evaluate(newValue, Schema, value);
+  } else if (validator.type === 'key') {
+    const key = validator.key;
+    const child = value[key];
+    const name = `.${key}`;
+    return evaluate(validator.value, Schema, child, name);
+  } else if (validator.type === 'array') {
+    const newItems = [];
+    for (let i = 0; i < value.length; i++) {
+      const item = value[i];
+      const name = `[${i}]`;
+      const result = evaluate(validator.item, Schema, item, name);
+      if (result instanceof Reject) {
+        return result;
+      }
+      newItems.push(result);
+    }
+    return newItems;
   }
   throw 'type is not specified';
 }
 
-function evaluate(schema, Schema, value) {
+function evaluate(schema, Schema, value, name) {
   if (schema instanceof Schema) {
-    return evaluate(schema._validate(value), Schema, value);
+    return evaluate(schema._validate(value, name), Schema, value, name);
   }
   if (schema instanceof Break) {
     return schema.value;

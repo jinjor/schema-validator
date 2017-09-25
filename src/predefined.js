@@ -85,13 +85,6 @@ module.exports = function(original) {
     maxLength(limit) {
       return this.check(this.key('length', sv.max(limit)))
     },
-    items(itemSchema) {
-      return this.flatten(items => {
-        return items.map((_, i) => {
-          return this.key(i, itemSchema);
-        });
-      });
-    },
     // Object
     keyValue(key, valueSchema) {
       return this.key(key, valueSchema).then(v => {
