@@ -46,10 +46,10 @@ const create = plugins => {
       return new Break(value);
     }
     _first(validator) {
-      return init([validator].concat(this._validators));
+      return new Schema([validator].concat(this._validators));
     }
     _last(validator) {
-      return init(this._validators.concat([validator]));
+      return new Schema(this._validators.concat([validator]));
     }
     first(f) {
       return this._first({
@@ -126,10 +126,6 @@ const create = plugins => {
         return newItems;
       });
     }
-  }
-
-  function init(validators) {
-    return new Schema(validators);
   }
 
   function wrapValidate(f) {
