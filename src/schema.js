@@ -49,44 +49,34 @@ const create = plugins => {
     break_(value) {
       return new Break(value);
     }
-    _first(validator) {
-      return new Schema({
-        type: 'if',
-        $if_: new Schema(validator),
-        $then: this,
-        $else_: true
-      });
+    _first(schema) {
+      return andThen(schema, this);
     }
-    _last(validator) {
-      return new Schema({
-        type: 'if',
-        $if_: this,
-        $then: new Schema(validator),
-        $else_: true
-      });
+    _last(schema) {
+      return andThen(this, schema);
     }
     first(f) {
-      return this._first({
+      return this._first(new Schema({
         type: 'function',
         $f: f
-      });
+      }));
     }
     then(f) {
-      return this._last({
+      return this._last(new Schema({
         type: 'function',
         $f: f
-      });
+      }));
     }
     _satisfy(message, isValid) {
       return this.when(F(value => isValid(value) || sv.reject(message)), Identity, true);
     }
     when(checkerSchema, thenSchema, elseSchema) {
-      return this._last({
+      return this._last(new Schema({
         type: 'if',
         $if_: checkerSchema,
         $then: thenSchema,
         $else_: elseSchema
-      });
+      }));
     }
     check(schema) {
       return this.when(schema, Identity, true);
@@ -119,19 +109,29 @@ const create = plugins => {
       return newValue;
     }
     key(key, valueSchema) {
-      return sv._last({
+      return sv._last(new Schema({
         type: 'key',
         $key: key,
         $value: valueSchema
-      });
+      }));
     }
     items(itemSchema) {
-      return this._last({
+      return this._last(new Schema({
         type: 'array',
         $item: itemSchema
-      });
+      }));
     }
   }
+
+  function andThen(firstSchema, secondSchema) {
+    return new Schema({
+      type: 'if',
+      $if_: firstSchema,
+      $then: secondSchema,
+      $else_: true
+    });
+  }
+
   const F = f => new Schema({
     type: 'function',
     $f: f
