@@ -33,14 +33,8 @@ class Break {
 // schema object
 const create = plugins => {
   class Schema {
-    constructor(validators) {
-      if (Array.isArray(validators)) {
-        this._validators = validators;
-      } else {
-        this._validators = validators ? [validators] : [];
-      }
-      if (validators && validators.type) {
-        const validator = validators;
+    constructor(validator) {
+      if (validator) {
         Object.keys(validator).forEach(key => {
           this[key] = validator[key];
         });
@@ -56,10 +50,20 @@ const create = plugins => {
       return new Break(value);
     }
     _first(validator) {
-      return new Schema([validator].concat(this._validators));
+      return new Schema({
+        type: 'if',
+        $if_: new Schema(validator),
+        $then: this,
+        $else_: true
+      });
     }
     _last(validator) {
-      return new Schema(this._validators.concat([validator]));
+      return new Schema({
+        type: 'if',
+        $if_: this,
+        $then: new Schema(validator),
+        $else_: true
+      });
     }
     first(f) {
       return this._first({
@@ -94,12 +98,10 @@ const create = plugins => {
     }
     _validate(value, name) {
       let result = null;
-      if (this.type && this._validators.length === 1) {
-        console.log('migrated');
+      if (this.type) {
         result = validateHelpHelp(this, value, Schema)
       } else {
-        console.log('deplicated');
-        result = validateHelp(this._validators, 0, value, Schema);
+        result = value;
       }
       if (result instanceof Reject) {
         return result.withMoreInfo(name, value);
@@ -144,21 +146,6 @@ const create = plugins => {
   // empty schema instance
   const sv = new Schema();
   return sv;
-}
-
-function validateHelp(validators, i, value, Schema) {
-  if (i >= validators.length) {
-    return value;
-  }
-  const validator = validators[i];
-  const newValue = validateHelpHelp(validator, value, Schema);
-  if (newValue instanceof Reject) {
-    return newValue;
-  }
-  if (newValue instanceof Break) {
-    return newValue.value;
-  }
-  return validateHelp(validators, i + 1, newValue, Schema);
 }
 
 function validateHelpHelp(validator, value, Schema) {
@@ -209,7 +196,6 @@ function evaluate(schema, Schema, value, name) {
   }
   return schema;
 }
-
 
 function addPlugin(prototype, plugin) {
   Object.keys(plugin).forEach(key => {
