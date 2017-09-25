@@ -67,13 +67,13 @@ const create = plugins => {
     }
     first(f) {
       return this._first({
-        type: 'func',
+        type: 'function',
         $f: f
       });
     }
     then(f) {
       return this._last({
-        type: 'func',
+        type: 'function',
         $f: f
       });
     }
@@ -133,7 +133,7 @@ const create = plugins => {
     }
   }
   const F = f => new Schema({
-    type: 'func',
+    type: 'function',
     $f: f
   });
   const True = new Schema({
@@ -163,7 +163,7 @@ function validateHelpHelp(validator, value, Schema) {
     }
   } else if (validator.type === 'value') {
     return validator.$value;
-  } else if (validator.type === 'func') {
+  } else if (validator.type === 'function') {
     const newValue = validator.$f(value);
     return evaluate(newValue, Schema, value);
   } else if (validator.type === 'key') {
