@@ -31,17 +31,13 @@ class Break {
 }
 
 // schema object
-const createSchemaClass = plugins => {
+const create = plugins => {
   class Schema {
     constructor(validators) {
       this._validators = validators || [];
     }
     extend(plugin) {
-      const cls = createSchemaClass(plugins.concat([plugin]));
-      return new cls();
-    }
-    empty() {
-      return init();
+      return create(plugins.concat([plugin]));
     }
     reject(message) {
       return new Reject(message);
@@ -110,7 +106,7 @@ const createSchemaClass = plugins => {
     }
     key(key, valueSchema) {
       const name = (typeof key === 'number') ? `[${key}]` : `.${key}`;
-      return this.empty()._last({
+      return sv._last({
         f: value => {
           const child = value[key];
           return valueSchema._validate(child, name);
@@ -146,7 +142,8 @@ const createSchemaClass = plugins => {
     };
   }
   plugins.forEach(plugin => addPlugin(Schema.prototype, plugin));
-  return Schema;
+  const sv = new Schema();
+  return sv;
 }
 
 function validateHelp(validators, i, value) {
@@ -177,6 +174,6 @@ function addPlugin(prototype, plugin) {
 }
 
 module.exports = {
-  createClass: createSchemaClass,
+  create: create,
   SchemaValidatorError: SchemaValidatorError,
 };
