@@ -49,23 +49,14 @@ const create = plugins => {
     break_(value) {
       return new Break(value);
     }
-    _first(schema) {
-      return andThen(schema, this);
-    }
     _last(schema) {
       return andThen(this, schema);
     }
     first(f) {
-      return this._first(new Schema({
-        type: 'function',
-        $f: f
-      }));
+      return andThen(F(f), this);
     }
     then(f) {
-      return this._last(new Schema({
-        type: 'function',
-        $f: f
-      }));
+      return andThen(this, F(f));
     }
     _satisfy(message, isValid) {
       return this.when(F(value => isValid(value) || sv.reject(message)), Identity, true);
