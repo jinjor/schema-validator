@@ -32,12 +32,6 @@ class Break {
 
 const createClass = plugins => {
   class Schema {
-    static value() {
-      return new Schema({
-        type: 'value',
-        $value: true
-      });
-    }
     static func(f) {
       return new Schema({
         type: 'function',
@@ -161,7 +155,6 @@ const createClass = plugins => {
 
   plugins.forEach(plugin => addPlugin(Schema.prototype, plugin));
 
-  const True = Schema.value(true);
   const Identity = Schema.func(v => v);
 
   return Schema;
@@ -206,8 +199,6 @@ function validate(validator, value, Schema) {
     } else {
       return evaluate(validator.$else_, Schema, value);
     }
-  } else if (validator.type === 'value') {
-    return validator.$value;
   } else if (validator.type === 'function') {
     return evaluate(validator.$f(value), Schema, value);
   } else if (validator.type === 'key') {
