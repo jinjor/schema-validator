@@ -71,10 +71,10 @@ const create = plugins => {
     }
     when(checkerSchema, thenSchema, elseSchema) {
       return this._last(new Schema({
-        type: 'try2',
-        $if_: checkerSchema,
+        type: 'when',
+        $when: checkerSchema,
         $then: thenSchema,
-        $else_: elseSchema
+        $else_: elseSchema || Identity
       }));
     }
     try_(schema, catchSchema) {
@@ -170,20 +170,17 @@ function validateHelpHelp(validator, value, Schema) {
     } else {
       return evaluate(newValue, Schema, value);;
     }
-  } else if (validator.type === 'try2') {
-    const valid = evaluate(validator.$if_, Schema, value);
-    if (!(valid instanceof Reject)) {
+  } else if (validator.type === 'when') {
+    const checkValue = evaluate(validator.$when, Schema, value);
+    if (!(checkValue instanceof Reject)) {
       return evaluate(validator.$then, Schema, value);
-    } else if (validator.$else_ === true) {
-      return valid; //return reject
     } else {
       return evaluate(validator.$else_, Schema, value);
     }
   } else if (validator.type === 'value') {
     return validator.$value;
   } else if (validator.type === 'function') {
-    const newValue = validator.$f(value);
-    return evaluate(newValue, Schema, value);
+    return evaluate(validator.$f(value), Schema, value);
   } else if (validator.type === 'key') {
     const key = validator.$key;
     const child = value[key];

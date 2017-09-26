@@ -145,8 +145,8 @@ describe('schema-validator', function() {
   it('should validate when', function() {
     assert.equal(1, sv.when(sv.number(), sv.min(1)).validate(1));
     throws(() => sv.when(sv.number(), sv.min(1)).validate(0));
-    // assert.equal(1, sv.when(sv.string(), sv.min(1)).validate(1));
-    // throws(() => sv.when(sv.number(), sv.min(1)).string().validate(1));
+    assert.equal(1, sv.when(sv.string(), sv.min(1)).validate(1));
+    throws(() => sv.when(sv.number(), sv.min(1)).string().validate(1));
   });
   it('should validate required', function() {
     assert.equal(0, sv.number().validate(0));

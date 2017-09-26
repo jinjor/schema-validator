@@ -80,10 +80,10 @@ module.exports = function(original) {
     },
     // Array(-like)
     minLength(limit) {
-      return this.then(v => this.key('length', sv.min(limit)).then(_ => v));
+      return this.then(v => sv.key('length', sv.min(limit)).then(_ => v));
     },
     maxLength(limit) {
-      return this.then(v => this.key('length', sv.max(limit)).then(_ => v));
+      return this.then(v => sv.key('length', sv.max(limit)).then(_ => v));
     },
     // Object
     keyValue(key, valueSchema) {
@@ -94,16 +94,29 @@ module.exports = function(original) {
       });
     },
     field(key, valueSchema, checkerSchema) {
-      const keyValueSchema = this.keyValue(key, valueSchema);
-      const toMergeSchema = value => {
-        return keyValueSchema.then(keyValue => {
-          return Object.assign({}, value, keyValue);
-        });
-      };
       if (checkerSchema) {
-        return this.when(checkerSchema, sv.then(toMergeSchema));
+        return this.when(checkerSchema, sv.field(key, valueSchema));
       }
-      return this.then(toMergeSchema);
+      return this.then(value => {
+        return sv.key(key, valueSchema).then(v => {
+          return Object.assign({}, value, {
+            [key]: v
+          });
+        })
+      });
+
+
+
+      // const keyValueSchema = this.keyValue(key, valueSchema);
+      // const toMergeSchema = value => {
+      //   return keyValueSchema.then(keyValue => {
+      //     return Object.assign({}, value, keyValue);
+      //   });
+      // };
+      // if (checkerSchema) {
+      //   return this.when(checkerSchema, sv.then(toMergeSchema));
+      // }
+      // return this.then(toMergeSchema);
     }
   });
   return sv;
