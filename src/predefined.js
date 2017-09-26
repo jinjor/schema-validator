@@ -1,15 +1,11 @@
-function isUndefined(a) {
-  return typeof a === 'undefined';
-}
-
 module.exports = function(original) {
   const sv = original.extend({
     // Satisfaction
     is(message, isValid) {
-      return this._satisfy('should be ' + message, isValid);
+      return this.check(isValid, 'should be ' + message);
     },
     isnt(message, isValid) {
-      return this._satisfy('should not be ' + message, isValid);
+      return this.check(isValid, 'should not be ' + message);
     },
     // Comparison
     truthy() {
@@ -32,13 +28,6 @@ module.exports = function(original) {
     },
     max(limit) {
       return this.isnt(`greater than ${limit}`, value => value <= limit);
-    },
-    // Requisitions
-    required() {
-      return this.first(value => isUndefined(value) ? sv.reject('is required') : value);
-    },
-    default_(defaultValue) {
-      return this.first(value => isUndefined(value) ? sv.break_(defaultValue) : value);
     },
     // Types
     typeOf(typeName) {
@@ -76,7 +65,7 @@ module.exports = function(original) {
       return this.is(`an array-like object`, value => typeof value.length === 'number');
     },
     defined() {
-      return this.is(`defined`, value => !isUndefined(value));
+      return this.is(`defined`, value => typeof value !== 'undefined');
     },
     // Array(-like)
     minLength(limit) {

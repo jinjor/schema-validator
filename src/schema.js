@@ -52,21 +52,18 @@ const create = plugins => {
     _last(schema) {
       return then(this, schema);
     }
-    first(f) {
+    _first(f) {
       return then(F(f), this);
     }
     then(f) {
       return then(this, F(f));
     }
-    _satisfy(message, isValid) {
-      return this._if(F(isValid), Identity, sv.reject(message));
-    }
-    _if(checkerSchema, thenSchema, elseSchema) {
+    check(isValid, message) {
       return this._last(new Schema({
         type: 'if',
-        $if_: checkerSchema,
-        $then: thenSchema,
-        $else_: elseSchema
+        $if_: F(isValid),
+        $then: Identity,
+        $else_: sv.reject(message)
       }));
     }
     when(checkerSchema, thenSchema, elseSchema) {
@@ -83,6 +80,12 @@ const create = plugins => {
         $try_: schema,
         $catch_: catchSchema
       }));
+    }
+    required() {
+      return this._first(value => typeof value === 'undefined' ? sv.reject('is required') : value);
+    }
+    default_(defaultValue) {
+      return this._first(value => typeof value === 'undefined' ? sv.break_(defaultValue) : value);
     }
     _validate(value, name) {
       let result = null;
