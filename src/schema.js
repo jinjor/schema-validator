@@ -87,7 +87,10 @@ const createClass = plugins => {
       });
     }
     static reject(message) {
-      return new Reject(message);
+      return new Schema({
+        type: 'reject',
+        $message: message
+      });
     }
     static extend(plugin) {
       return createClass(plugins.concat([plugin]));
@@ -124,12 +127,7 @@ const createClass = plugins => {
       return this.next(Schema.items(itemSchema));
     }
     _validate(value, name) {
-      let result = null;
-      if (this.type) {
-        result = validate(this, value, Schema)
-      } else {
-        result = value;
-      }
+      const result = this.type ? validate(this, value, Schema) : value;
       if (result instanceof Reject) {
         return result.withMoreInfo(name, value);
       }
@@ -152,7 +150,9 @@ const createClass = plugins => {
 }
 
 function validate(validator, value, Schema) {
-  if (validator.type === 'satisfy') {
+  if (validator.type === 'reject') {
+    return new Reject(validator.$message);
+  } else if (validator.type === 'satisfy') {
     const valid = validator.$isValid(value);
     if (valid) {
       return value;
