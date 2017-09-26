@@ -59,21 +59,29 @@ const create = plugins => {
     then(f) {
       return this.next(F(f));
     }
-    check(isValid, message) {
+    satisfy(isValid, message) {
+      return new Schema({
+        type: 'satisfy',
+        $isValid: isValid,
+        $message: message
+      });
+    }
+    check(checkerSchema) {
       return this.next(new Schema({
-        type: 'if',
-        $if_: F(isValid),
-        $then: Identity,
-        $else_: sv.reject(message)
+        type: 'check',
+        $check: checkerSchema
       }));
     }
-    when(checkerSchema, thenSchema, elseSchema) {
-      return this.next(new Schema({
-        type: 'when',
+    _when(checkerSchema, thenSchema, elseSchema) {
+      return new Schema({
+        type: 'if',
         $when: checkerSchema,
-        $then: thenSchema,
+        $then: thenSchema || Identity,
         $else_: elseSchema || Identity
-      }));
+      });
+    }
+    when(checkerSchema, thenSchema, elseSchema) {
+      return this.next(this._when(checkerSchema, thenSchema, elseSchema));
     }
     try_(schema, catchSchema) {
       return this.next(new Schema({
@@ -138,12 +146,19 @@ function validateHelpHelp(validator, value, Schema) {
   if (validator instanceof Break) {
     return validator.value;
   }
-  if (validator.type === 'if') {
-    const valid = evaluate(validator.$if_, Schema, value);
+  if (validator.type === 'satisfy') {
+    const valid = validator.$isValid(value);
     if (valid) {
-      return evaluate(validator.$then, Schema, value);
+      return value;
     } else {
-      return evaluate(validator.$else_, Schema, value);
+      return new Reject(validator.$message);
+    }
+  } else if (validator.type === 'check') {
+    const checkValue = evaluate(validator.$check, Schema, value);
+    if (checkValue instanceof Reject) {
+      return checkValue;
+    } else {
+      return value;
     }
   } else if (validator.type === 'next') {
     const newValue = evaluate(validator.$first, Schema, value);
@@ -159,7 +174,7 @@ function validateHelpHelp(validator, value, Schema) {
     } else {
       return evaluate(newValue, Schema, value);;
     }
-  } else if (validator.type === 'when') {
+  } else if (validator.type === 'if') {
     const checkValue = evaluate(validator.$when, Schema, value);
     if (!(checkValue instanceof Reject)) {
       return evaluate(validator.$then, Schema, value);
@@ -173,8 +188,9 @@ function validateHelpHelp(validator, value, Schema) {
   } else if (validator.type === 'key') {
     const key = validator.$key;
     const child = value[key];
+    console.log('child', child);
     const name = `.${key}`;
-    return evaluate(validator.$value, Schema, child, name);
+    return evaluate(validator.$value || child, Schema, child, name);
   } else if (validator.type === 'array') {
     const newItems = [];
     for (let i = 0; i < value.length; i++) {

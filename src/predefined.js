@@ -2,10 +2,10 @@ module.exports = function(original) {
   const sv = original.extend({
     // Satisfaction
     is(message, isValid) {
-      return this.check(isValid, 'should be ' + message);
+      return this.next(sv.satisfy(isValid, 'should be ' + message));
     },
     isnt(message, isValid) {
-      return this.check(isValid, 'should not be ' + message);
+      return this.next(sv.satisfy(isValid, 'should not be ' + message));
     },
     // Comparison
     truthy() {
@@ -69,17 +69,17 @@ module.exports = function(original) {
     },
     // Requisitions
     required() {
-      return sv.when(sv.typeOf('undefined'), sv.reject('is required')).next(this);
+      return sv._when(sv.typeOf('undefined'), sv.reject('is required')).next(this);
     },
     default_(defaultValue) {
-      return sv.when(sv.typeOf('undefined'), sv.break_(defaultValue)).next(this);
+      return sv._when(sv.typeOf('undefined'), sv.break_(defaultValue)).next(this);
     },
     // Array(-like)
     minLength(limit) {
-      return this.then(v => sv.key('length', sv.min(limit)).then(_ => v));
+      return this.check(sv.key('length').min(limit));
     },
     maxLength(limit) {
-      return this.then(v => sv.key('length', sv.max(limit)).then(_ => v));
+      return this.check(sv.key('length').max(limit));
     },
     field(key, valueSchema, checkerSchema) {
       if (checkerSchema) {
