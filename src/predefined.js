@@ -69,10 +69,10 @@ module.exports = function(original) {
     },
     // Requisitions
     required() {
-      return Schema.when(new Schema().typeOf('undefined'), Schema.reject('is required')).next(this);
+      return Schema.when(new Schema().typeOf('undefined'), Schema.reject('is required'), this);
     },
     default_(defaultValue) {
-      return Schema.when(new Schema().typeOf('undefined'), Schema.break_(defaultValue)).next(this);
+      return Schema.when(new Schema().typeOf('undefined'), Schema.value(defaultValue), this);
     },
     // Array(-like)
     minLength(limit) {

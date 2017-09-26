@@ -24,14 +24,14 @@ class Reject {
   }
 }
 
-class Break {
-  constructor(value) {
-    this.value = value;
-  }
-}
-
 const createClass = plugins => {
   class Schema {
+    static value(value) {
+      return new Schema({
+        type: 'value',
+        $value: value
+      });
+    }
     static func(f) {
       return new Schema({
         type: 'function',
@@ -89,9 +89,6 @@ const createClass = plugins => {
     static reject(message) {
       return new Reject(message);
     }
-    static break_(value) {
-      return new Break(value);
-    }
     static extend(plugin) {
       return createClass(plugins.concat([plugin]));
     }
@@ -133,14 +130,8 @@ const createClass = plugins => {
       } else {
         result = value;
       }
-      if (result && result.type) {
-        throw `${this.type} -> ${result.type}?`
-      }
       if (result instanceof Reject) {
         return result.withMoreInfo(name, value);
-      }
-      if (result instanceof Break) {
-        return newValue.value;
       }
       return result;
     }
@@ -161,9 +152,6 @@ const createClass = plugins => {
 }
 
 function validate(validator, value, Schema) {
-  if (validator instanceof Break) {
-    return validator.value;
-  }
   if (validator.type === 'satisfy') {
     const valid = validator.$isValid(value);
     if (valid) {
@@ -199,6 +187,8 @@ function validate(validator, value, Schema) {
     } else {
       return evaluate(validator.$else_, Schema, value);
     }
+  } else if (validator.type === 'value') {
+    return validator.$value;
   } else if (validator.type === 'function') {
     return evaluate(validator.$f(value), Schema, value);
   } else if (validator.type === 'key') {
@@ -226,9 +216,6 @@ function evaluate(schema, Schema, value, name) {
   // if (schema instanceof Schema) {
   if (schema && schema._validate) {
     return evaluate(schema._validate(value, name), Schema, value, name);
-  }
-  if (schema instanceof Break) {
-    return schema.value;
   }
   // console.log(schema instanceof Schema, schema);
   return schema;
