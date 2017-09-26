@@ -1,11 +1,11 @@
 module.exports = function(original) {
-  const sv = original.extend({
+  const Schema = original.extend({
     // Satisfaction
     is(message, isValid) {
-      return this.next(sv.satisfy(isValid, 'should be ' + message));
+      return this.next(Schema.satisfy(isValid, 'should be ' + message));
     },
     isnt(message, isValid) {
-      return this.next(sv.satisfy(isValid, 'should not be ' + message));
+      return this.next(Schema.satisfy(isValid, 'should not be ' + message));
     },
     // Comparison
     truthy() {
@@ -69,24 +69,24 @@ module.exports = function(original) {
     },
     // Requisitions
     required() {
-      return sv._when(sv.typeOf('undefined'), sv.reject('is required')).next(this);
+      return Schema.when(new Schema().typeOf('undefined'), Schema.reject('is required')).next(this);
     },
     default_(defaultValue) {
-      return sv._when(sv.typeOf('undefined'), sv.break_(defaultValue)).next(this);
+      return Schema.when(new Schema().typeOf('undefined'), Schema.break_(defaultValue)).next(this);
     },
     // Array(-like)
     minLength(limit) {
-      return this.check(sv.key('length').min(limit));
+      return Schema.check(Schema.key('length').min(limit));
     },
     maxLength(limit) {
-      return this.check(sv.key('length').max(limit));
+      return Schema.check(Schema.key('length').max(limit));
     },
     field(key, valueSchema, checkerSchema) {
       if (checkerSchema) {
-        return this.when(checkerSchema, sv.field(key, valueSchema));
+        return Schema.when(checkerSchema, this.field(key, valueSchema));
       }
       return this.then(value => {
-        return sv.key(key, valueSchema).then(v => {
+        return Schema.key(key, valueSchema).then(v => {
           return Object.assign({}, value, {
             [key]: v
           });
@@ -94,5 +94,5 @@ module.exports = function(original) {
       });
     }
   });
-  return sv;
+  return Schema;
 }

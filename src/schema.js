@@ -30,49 +30,48 @@ class Break {
   }
 }
 
-// schema object
-const create = plugins => {
+const createClass = plugins => {
   class Schema {
-    constructor(validator) {
-      if (validator) {
-        Object.keys(validator).forEach(key => {
-          this[key] = validator[key];
-        });
-      }
+    static value() {
+      return new Schema({
+        type: 'value',
+        $value: true
+      });
     }
-    extend(plugin) {
-      return create(plugins.concat([plugin]));
+    static func(f) {
+      return new Schema({
+        type: 'function',
+        $f: f
+      });
     }
-    reject(message) {
-      return new Reject(message);
+    static key(key, valueSchema) {
+      return new Schema({
+        type: 'key',
+        $key: key,
+        $value: valueSchema || Identity
+      })
     }
-    break_(value) {
-      return new Break(value);
-    }
-    next(schema) {
+    static next(first, schema) {
       return new Schema({
         type: 'next',
-        $first: this,
+        $first: first,
         $second: schema,
       });
     }
-    then(f) {
-      return this.next(F(f));
-    }
-    satisfy(isValid, message) {
+    static satisfy(isValid, message) {
       return new Schema({
         type: 'satisfy',
         $isValid: isValid,
         $message: message
       });
     }
-    check(checkerSchema) {
-      return this.next(new Schema({
+    static check(checkerSchema) {
+      return new Schema({
         type: 'check',
         $check: checkerSchema
-      }));
+      });
     }
-    _when(checkerSchema, thenSchema, elseSchema) {
+    static when(checkerSchema, thenSchema, elseSchema) {
       return new Schema({
         type: 'if',
         $when: checkerSchema,
@@ -80,22 +79,68 @@ const create = plugins => {
         $else_: elseSchema || Identity
       });
     }
-    when(checkerSchema, thenSchema, elseSchema) {
-      return this.next(this._when(checkerSchema, thenSchema, elseSchema));
-    }
-    try_(schema, catchSchema) {
-      return this.next(new Schema({
+    static try_(schema, catchSchema) {
+      return new Schema({
         type: 'try',
         $try_: schema,
         $catch_: catchSchema
-      }));
+      });
+    }
+    static items(itemSchema) {
+      return new Schema({
+        type: 'array',
+        $item: itemSchema
+      });
+    }
+    static reject(message) {
+      return new Reject(message);
+    }
+    static break_(value) {
+      return new Break(value);
+    }
+    static extend(plugin) {
+      return createClass(plugins.concat([plugin]));
+    }
+    constructor(validator) {
+      if (validator) {
+        Object.keys(validator).forEach(key => {
+          this[key] = validator[key];
+        });
+      }
+    }
+    next(schema) {
+      return Schema.next(this, schema);
+    }
+    then(f) {
+      return this.next(Schema.func(f));
+    }
+    satisfy(isValid, message) {
+      return this.next(Schema.satisfy(isValid, message));
+    }
+    check(checkerSchema) {
+      return this.next(Schema.check(checkerSchema));
+    }
+    when(checkerSchema, thenSchema, elseSchema) {
+      return this.next(Schema.when(checkerSchema, thenSchema, elseSchema));
+    }
+    try_(schema, catchSchema) {
+      return this.next(Schema.try_(schema, catchSchema));
+    }
+    key(key, valueSchema) {
+      return this.next(Schema.key(key, valueSchema));
+    }
+    items(itemSchema) {
+      return this.next(Schema.items(itemSchema));
     }
     _validate(value, name) {
       let result = null;
       if (this.type) {
-        result = validateHelpHelp(this, value, Schema)
+        result = validate(this, value, Schema)
       } else {
         result = value;
+      }
+      if (result && result.type) {
+        throw `${this.type} -> ${result.type}?`
       }
       if (result instanceof Reject) {
         return result.withMoreInfo(name, value);
@@ -112,37 +157,17 @@ const create = plugins => {
       }
       return newValue;
     }
-    key(key, valueSchema) {
-      return sv.next(new Schema({
-        type: 'key',
-        $key: key,
-        $value: valueSchema
-      }));
-    }
-    items(itemSchema) {
-      return this.next(new Schema({
-        type: 'array',
-        $item: itemSchema
-      }));
-    }
   }
-  const F = f => new Schema({
-    type: 'function',
-    $f: f
-  });
-  const True = new Schema({
-    type: 'value',
-    $value: true
-  });
-  const Identity = F(v => v);
 
   plugins.forEach(plugin => addPlugin(Schema.prototype, plugin));
-  // empty schema instance
-  const sv = new Schema();
-  return sv;
+
+  const True = Schema.value(true);
+  const Identity = Schema.func(v => v);
+
+  return Schema;
 }
 
-function validateHelpHelp(validator, value, Schema) {
+function validate(validator, value, Schema) {
   if (validator instanceof Break) {
     return validator.value;
   }
@@ -151,7 +176,7 @@ function validateHelpHelp(validator, value, Schema) {
     if (valid) {
       return value;
     } else {
-      return new Reject(validator.$message);
+      return Schema.reject(validator.$message);
     }
   } else if (validator.type === 'check') {
     const checkValue = evaluate(validator.$check, Schema, value);
@@ -188,7 +213,6 @@ function validateHelpHelp(validator, value, Schema) {
   } else if (validator.type === 'key') {
     const key = validator.$key;
     const child = value[key];
-    console.log('child', child);
     const name = `.${key}`;
     return evaluate(validator.$value || child, Schema, child, name);
   } else if (validator.type === 'array') {
@@ -208,12 +232,14 @@ function validateHelpHelp(validator, value, Schema) {
 }
 
 function evaluate(schema, Schema, value, name) {
-  if (schema instanceof Schema) {
+  // if (schema instanceof Schema) {
+  if (schema && schema._validate) {
     return evaluate(schema._validate(value, name), Schema, value, name);
   }
   if (schema instanceof Break) {
     return schema.value;
   }
+  // console.log(schema instanceof Schema, schema);
   return schema;
 }
 
@@ -230,8 +256,7 @@ function addPlugin(prototype, plugin) {
   });
 }
 
-
 module.exports = {
-  create: create,
-  SchemaValidatorError: SchemaValidatorError,
+  createClass,
+  SchemaValidatorError
 };

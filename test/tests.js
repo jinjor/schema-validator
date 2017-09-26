@@ -1,6 +1,7 @@
 const chai = require('chai');
 const assert = chai.assert;
-const sv = require('../src/index.js');
+const SV = require('../src/index.js');
+const sv = new SV();
 const original = sv;
 const schema = require('../src/schema.js');
 
@@ -191,11 +192,12 @@ describe('schema-validator', function() {
     }, 'options'));
   });
   it('should be extended', function() {
-    const sv = original.extend({
+    const MySV = SV.extend({
       isHello() {
-        return this.is("hello", value => value === 'hello');
+        return this.is('hello', value => value === 'hello');
       }
     });
+    const sv = new MySV();
     assert.equal('hello', sv.isHello().validate('hello'));
     throws(() => sv.isHello().validate('bye'));
   });
@@ -225,12 +227,13 @@ describe('schema-validator', function() {
     }, 'foo'), 'foo.f.g', '1');
   });
   it('have correct example', function() {
-    const sv = original.extend({
+    const MySV = SV.extend({
       allowedMethod(methods) {
         const message = `one of [${methods}]`;
         return this.is(message, value => methods.includes(value));
       }
     });
+    const sv = new MySV();
     const schema = sv.object()
       .field('host', sv.string().required())
       .field('method', sv.allowedMethod(['GET', 'POST']).default_('GET'))
