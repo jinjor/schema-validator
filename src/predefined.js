@@ -67,6 +67,13 @@ module.exports = function(original) {
     defined() {
       return this.is(`defined`, value => typeof value !== 'undefined');
     },
+    // Requisitions
+    required() {
+      return sv.when(sv.typeOf('undefined'), sv.reject('is required')).next(this);
+    },
+    default_(defaultValue) {
+      return sv.when(sv.typeOf('undefined'), sv.break_(defaultValue)).next(this);
+    },
     // Array(-like)
     minLength(limit) {
       return this.then(v => sv.key('length', sv.min(limit)).then(_ => v));

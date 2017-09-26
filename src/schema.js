@@ -49,17 +49,18 @@ const create = plugins => {
     break_(value) {
       return new Break(value);
     }
-    _last(schema) {
-      return then(this, schema);
-    }
-    _first(f) {
-      return then(F(f), this);
+    next(schema) {
+      return new Schema({
+        type: 'next',
+        $first: this,
+        $second: schema,
+      });
     }
     then(f) {
-      return then(this, F(f));
+      return this.next(F(f));
     }
     check(isValid, message) {
-      return this._last(new Schema({
+      return this.next(new Schema({
         type: 'if',
         $if_: F(isValid),
         $then: Identity,
@@ -67,7 +68,7 @@ const create = plugins => {
       }));
     }
     when(checkerSchema, thenSchema, elseSchema) {
-      return this._last(new Schema({
+      return this.next(new Schema({
         type: 'when',
         $when: checkerSchema,
         $then: thenSchema,
@@ -75,17 +76,11 @@ const create = plugins => {
       }));
     }
     try_(schema, catchSchema) {
-      return this._last(new Schema({
+      return this.next(new Schema({
         type: 'try',
         $try_: schema,
         $catch_: catchSchema
       }));
-    }
-    required() {
-      return this._first(value => typeof value === 'undefined' ? sv.reject('is required') : value);
-    }
-    default_(defaultValue) {
-      return this._first(value => typeof value === 'undefined' ? sv.break_(defaultValue) : value);
     }
     _validate(value, name) {
       let result = null;
@@ -110,28 +105,19 @@ const create = plugins => {
       return newValue;
     }
     key(key, valueSchema) {
-      return sv._last(new Schema({
+      return sv.next(new Schema({
         type: 'key',
         $key: key,
         $value: valueSchema
       }));
     }
     items(itemSchema) {
-      return this._last(new Schema({
+      return this.next(new Schema({
         type: 'array',
         $item: itemSchema
       }));
     }
   }
-
-  function then(firstSchema, secondSchema) {
-    return new Schema({
-      type: 'then',
-      $first: firstSchema,
-      $second: secondSchema,
-    });
-  }
-
   const F = f => new Schema({
     type: 'function',
     $f: f
@@ -159,7 +145,7 @@ function validateHelpHelp(validator, value, Schema) {
     } else {
       return evaluate(validator.$else_, Schema, value);
     }
-  } else if (validator.type === 'then') {
+  } else if (validator.type === 'next') {
     const newValue = evaluate(validator.$first, Schema, value);
     if (newValue instanceof Reject) {
       return newValue;
