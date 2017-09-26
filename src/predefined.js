@@ -85,14 +85,6 @@ module.exports = function(original) {
     maxLength(limit) {
       return this.then(v => sv.key('length', sv.max(limit)).then(_ => v));
     },
-    // Object
-    keyValue(key, valueSchema) {
-      return this.key(key, valueSchema).then(v => {
-        return {
-          [key]: v
-        };
-      });
-    },
     field(key, valueSchema, checkerSchema) {
       if (checkerSchema) {
         return this.when(checkerSchema, sv.field(key, valueSchema));
@@ -104,19 +96,6 @@ module.exports = function(original) {
           });
         })
       });
-
-
-
-      // const keyValueSchema = this.keyValue(key, valueSchema);
-      // const toMergeSchema = value => {
-      //   return keyValueSchema.then(keyValue => {
-      //     return Object.assign({}, value, keyValue);
-      //   });
-      // };
-      // if (checkerSchema) {
-      //   return this.when(checkerSchema, sv.then(toMergeSchema));
-      // }
-      // return this.then(toMergeSchema);
     }
   });
   return sv;
