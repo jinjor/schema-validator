@@ -96,11 +96,7 @@ const createClass = plugins => {
       return createClass(plugins.concat([plugin]));
     }
     constructor(validator) {
-      if (validator) {
-        Object.keys(validator).forEach(key => {
-          this[key] = validator[key];
-        });
-      }
+      this._validator = validator;
     }
     next(schema) {
       return Schema.next(this, schema);
@@ -127,7 +123,7 @@ const createClass = plugins => {
       return this.next(Schema.items(itemSchema));
     }
     _validate(value, name) {
-      const result = this.type ? validate(this, value, Schema) : value;
+      const result = this._validator ? validate(this._validator, value, Schema) : value;
       if (result instanceof Reject) {
         return result.withMoreInfo(name, value);
       }
@@ -213,11 +209,9 @@ function validate(validator, value, Schema) {
 }
 
 function evaluate(schema, Schema, value, name) {
-  // if (schema instanceof Schema) {
   if (schema && schema._validate) {
     return evaluate(schema._validate(value, name), Schema, value, name);
   }
-  // console.log(schema instanceof Schema, schema);
   return schema;
 }
 
