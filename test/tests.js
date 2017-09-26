@@ -213,9 +213,6 @@ describe('schema-validator', function() {
     throws(() => sv.key('a', sv.string()).validate({
       a: 1
     }, 'foo'), 'foo.a', '1');
-    throws(() => sv.object().check(sv.key('b', sv.string())).validate({
-      b: 1
-    }, 'foo'), 'foo.b', '1');
     throws(() => sv.object().field('c', sv.string()).validate({
       c: 1
     }, 'foo'), 'foo.c', '1');

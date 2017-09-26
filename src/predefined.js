@@ -80,10 +80,10 @@ module.exports = function(original) {
     },
     // Array(-like)
     minLength(limit) {
-      return this.check(this.key('length', sv.min(limit)));
+      return this.then(v => this.key('length', sv.min(limit)).then(_ => v));
     },
     maxLength(limit) {
-      return this.check(this.key('length', sv.max(limit)))
+      return this.then(v => this.key('length', sv.max(limit)).then(_ => v));
     },
     // Object
     keyValue(key, valueSchema) {
