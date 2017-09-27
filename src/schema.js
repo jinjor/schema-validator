@@ -18,6 +18,10 @@ class Reject {
   }
 }
 
+function optional(value, defaultValue) {
+  return (typeof value === 'undefined') ? defaultValue : value;
+}
+
 const createClass = plugins => {
   class Schema {
     static value(value) {
@@ -36,7 +40,7 @@ const createClass = plugins => {
       return new Schema({
         type: 'key',
         $key: key,
-        $value: (typeof valueSchema === 'undefined' ? Identity : valueSchema)
+        $value: valueSchema
       })
     }
     static next(first, schema) {
@@ -63,8 +67,8 @@ const createClass = plugins => {
       return new Schema({
         type: 'if',
         $when: checkerSchema,
-        $then: (typeof thenSchema === 'undefined' ? Identity : thenSchema),
-        $else_: (typeof elseSchema === 'undefined' ? Identity : elseSchema)
+        $then: thenSchema,
+        $else_: elseSchema
       });
     }
     static try_(schema, catchSchema) {
@@ -174,9 +178,9 @@ function validate(validator, name, value) {
   } else if (validator.type === 'if') {
     const checkValue = evaluate(validator.$when, name, value);
     if (!(checkValue instanceof Reject)) {
-      return evaluate(validator.$then, name, value);
+      return evaluate(optional(validator.$then, value), name, value);
     } else {
-      return evaluate(validator.$else_, name, value);
+      return evaluate(optional(validator.$else_, value), name, value);
     }
   } else if (validator.type === 'value') {
     return validator.$value;
@@ -186,7 +190,7 @@ function validate(validator, name, value) {
     const key = validator.$key;
     const child = value[key];
     const newName = name + `.${key}`;
-    return evaluate(validator.$value, newName, child);
+    return evaluate(optional(validator.$value, child), newName, child);
   } else if (validator.type === 'array') {
     const newItems = [];
     for (let i = 0; i < value.length; i++) {

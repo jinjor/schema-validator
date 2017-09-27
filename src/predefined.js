@@ -19,7 +19,10 @@ module.exports = function(original) {
   const number = () => typeOf('number');
   const string = () => typeOf('string');
   const func = () => typeOf('function');
-  const object = () => Schema.check(typeOf('object').isnt('null', value => value !== null))
+  const object = () => Schema.check(typeOf('object').isnt('null', value => value !== null));
+  const date = () => instanceOf(Date);
+  const integer = () => is(`an integer`, value => value % 1 === 0);
+  const array = () => is(`an array`, value => Array.isArray(value));
   const Schema = original.extend({
     // Satisfaction
     is(message, isValid) {
@@ -73,26 +76,26 @@ module.exports = function(original) {
       return this.next(object());
     },
     date() {
-      return this.instanceOf(Date);
+      return this.next(date());
     },
     integer() {
-      return this.is(`an integer`, value => value % 1 === 0);
+      return this.next(integer());
     },
     array() {
-      return this.is(`an array`, value => Array.isArray(value));
+      return this.next(array());
     },
     arrayLike() {
-      return this.is(`an array-like object`, value => typeof value.length === 'number');
+      return this.check(key('length').typeOf('number'));
     },
     defined() {
       return this.is(`defined`, value => typeof value !== 'undefined');
     },
     // Requisitions
     required() {
-      return Schema.when(new Schema().typeOf('undefined'), Schema.reject('is required'), this);
+      return Schema.when(typeOf('undefined'), Schema.reject('is required'), this);
     },
     default_(defaultValue) {
-      return Schema.when(new Schema().typeOf('undefined'), Schema.value(defaultValue), this);
+      return Schema.when(typeOf('undefined'), Schema.value(defaultValue), this);
     },
     // Array(-like)
     minLength(limit) {
