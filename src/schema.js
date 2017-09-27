@@ -1,20 +1,8 @@
-class SchemaValidatorError extends Error {
-  constructor(message) {
-    super();
-    this.message = message;
-  }
-}
-
-class Reject {
+const Reject = class SchemaValidatorError extends Error {
   constructor(message, name, value) {
-    this.message = message;
-    this.name = name;
-    this.value = value;
-  }
-  toError() {
-    const name = this.name;
-    const stringValue = JSON.stringify(this.value);
-    return new SchemaValidatorError(`${name} ${this.message}, but got ${stringValue}`);
+    super();
+    const stringValue = JSON.stringify(value);
+    this.message = `${name} ${message}, but got ${stringValue}`;
   }
 }
 
@@ -91,7 +79,7 @@ const createClass = plugins => {
     validate(value, name) {
       const newValue = this._validate(value, name);
       if (newValue instanceof Reject) {
-        throw newValue.toError();
+        throw newValue;
       }
       return newValue;
     }
@@ -192,5 +180,5 @@ function addPlugin(prototype, plugin) {
 
 module.exports = {
   createClass,
-  SchemaValidatorError
+  SchemaValidatorError: Reject
 };
