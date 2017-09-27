@@ -130,14 +130,18 @@ const createClass = plugins => {
 
   plugins.forEach(plugin => addPlugin(Schema.prototype, plugin));
 
-  const Identity = Schema.func(v => v);
+  const Identity = new Schema({
+    type: 'identity'
+  });
 
   return Schema;
 }
 
 function validate(validator, name, value) {
   // console.log('validate', validator.type, name);
-  if (validator.type === 'reject') {
+  if (validator.type === 'identity') {
+    return value;
+  } else if (validator.type === 'reject') {
     return new Reject(validator.$message, name, value);
   } else if (validator.type === 'satisfy') {
     const valid = validator.$isValid(value);
