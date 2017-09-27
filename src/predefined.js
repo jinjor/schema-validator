@@ -33,7 +33,7 @@ module.exports = function(original) {
       });
     },
     assign: (objectSchema) => {
-      return Schema.func(value => {
+      return Schema.f(value => {
         return objectSchema.then(object => {
           return Object.assign({}, value, object);
         })
