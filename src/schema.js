@@ -36,7 +36,7 @@ const createClass = plugins => {
       return new Schema({
         type: 'key',
         $key: key,
-        $value: valueSchema || Identity
+        $value: (typeof valueSchema === 'undefined' ? Identity : valueSchema)
       })
     }
     static next(first, schema) {
@@ -63,8 +63,8 @@ const createClass = plugins => {
       return new Schema({
         type: 'if',
         $when: checkerSchema,
-        $then: thenSchema || Identity,
-        $else_: elseSchema || Identity
+        $then: (typeof thenSchema === 'undefined' ? Identity : thenSchema),
+        $else_: (typeof elseSchema === 'undefined' ? Identity : elseSchema)
       });
     }
     static try_(schema, catchSchema) {
@@ -136,6 +136,7 @@ const createClass = plugins => {
 }
 
 function validate(validator, name, value) {
+  // console.log('validate', validator.type, name);
   if (validator.type === 'reject') {
     return new Reject(validator.$message, name, value);
   } else if (validator.type === 'satisfy') {
@@ -181,7 +182,7 @@ function validate(validator, name, value) {
     const key = validator.$key;
     const child = value[key];
     const newName = name + `.${key}`;
-    return evaluate(validator.$value || child, newName, child);
+    return evaluate(validator.$value, newName, child);
   } else if (validator.type === 'array') {
     const newItems = [];
     for (let i = 0; i < value.length; i++) {

@@ -76,10 +76,12 @@ module.exports = function(original) {
     },
     // Array(-like)
     minLength(limit) {
-      return Schema.check(Schema.key('length').min(limit));
+      // return Schema.check(Schema.key('length').min(limit));
+      return Schema.check(Schema.key('length', Schema.satisfy(v => v >= limit)));
     },
     maxLength(limit) {
-      return Schema.check(Schema.key('length').max(limit));
+      // return Schema.check(Schema.key('length').max(limit));
+      return Schema.check(Schema.key('length', Schema.satisfy(v => v <= limit)));
     },
     field(key, valueSchema, checkerSchema) {
       if (checkerSchema) {

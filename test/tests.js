@@ -209,6 +209,7 @@ describe('schema-validator', function() {
     throws(() => sv.number().then(n => n > 0 ? sv.integer() : n).validate(1.5, 'foo'), 'foo', '1.5');
     throws(() => sv.number().when(sv.is('positive', n => n > 0), sv.integer()).validate(1.5, 'foo'), 'foo', '1.5');
     throws(() => sv.when(sv.string(), sv.number()).validate('', 'foo'), 'foo', '""');
+    throws(() => sv.string().minLength(1).validate('', 'foo'), 'foo.length', '0');
     throws(() => sv.array().minLength(1).validate([], 'foo'), 'foo.length', '0');
     throws(() => sv.array().items(sv.string()).validate([1], 'foo'), 'foo[0]', '1');
     throws(() => sv.array().items(sv.string().minLength(1)).validate(['1', ''], 'foo'), 'foo[1].length', '0');
