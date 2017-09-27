@@ -8,18 +8,12 @@ class SchemaValidatorError extends Error {
 class Reject {
   constructor(message, name, value) {
     this.message = message;
-    this.name = name || [];
-    this.value = value || [];
-  }
-  withMoreInfo(name, value) {
-    return new Reject(this.message, [name].concat(this.name), this.value.length ? this.value : [value]);
+    this.name = name;
+    this.value = value;
   }
   toError() {
-    let name = this.name.filter(n => !!n).join('');
-    if (!this.name[0]) {
-      name = 'value' + name;
-    }
-    const stringValue = JSON.stringify(this.value[0]);
+    const name = this.name;
+    const stringValue = JSON.stringify(this.value);
     return new SchemaValidatorError(`${name} ${this.message}, but got ${stringValue}`);
   }
 }
@@ -123,11 +117,7 @@ const createClass = plugins => {
       return this.next(Schema.items(itemSchema));
     }
     _validate(value, name) {
-      const result = this._validator ? validate(this._validator, value, Schema) : value;
-      if (result instanceof Reject) {
-        return result.withMoreInfo(name, value);
-      }
-      return result;
+      return this._validator ? validate(this._validator, (name || 'value'), value) : value;
     }
     validate(value, name) {
       const newValue = this._validate(value, name);
@@ -145,59 +135,59 @@ const createClass = plugins => {
   return Schema;
 }
 
-function validate(validator, value, Schema) {
+function validate(validator, name, value) {
   if (validator.type === 'reject') {
-    return new Reject(validator.$message);
+    return new Reject(validator.$message, name, value);
   } else if (validator.type === 'satisfy') {
     const valid = validator.$isValid(value);
     if (valid) {
       return value;
     } else {
-      return Schema.reject(validator.$message);
+      return new Reject(validator.$message, name, value);
     }
   } else if (validator.type === 'check') {
-    const checkValue = evaluate(validator.$check, Schema, value);
+    const checkValue = evaluate(validator.$check, name, value);
     if (checkValue instanceof Reject) {
       return checkValue;
     } else {
       return value;
     }
   } else if (validator.type === 'next') {
-    const newValue = evaluate(validator.$first, Schema, value);
+    const newValue = evaluate(validator.$first, name, value);
     if (newValue instanceof Reject) {
       return newValue;
     } else {
-      return evaluate(validator.$second, Schema, newValue);
+      return evaluate(validator.$second, name, newValue);
     }
   } else if (validator.type === 'try') {
-    const newValue = evaluate(validator.$try_, Schema, value);
+    const newValue = evaluate(validator.$try_, name, value);
     if (newValue instanceof Reject) {
-      return evaluate(validator.$catch_, Schema, newValue);
+      return evaluate(validator.$catch_, name, newValue);
     } else {
-      return evaluate(newValue, Schema, value);;
+      return evaluate(newValue, name, value);
     }
   } else if (validator.type === 'if') {
-    const checkValue = evaluate(validator.$when, Schema, value);
+    const checkValue = evaluate(validator.$when, name, value);
     if (!(checkValue instanceof Reject)) {
-      return evaluate(validator.$then, Schema, value);
+      return evaluate(validator.$then, name, value);
     } else {
-      return evaluate(validator.$else_, Schema, value);
+      return evaluate(validator.$else_, name, value);
     }
   } else if (validator.type === 'value') {
     return validator.$value;
   } else if (validator.type === 'function') {
-    return evaluate(validator.$f(value), Schema, value);
+    return evaluate(validator.$f(value), name, value);
   } else if (validator.type === 'key') {
     const key = validator.$key;
     const child = value[key];
-    const name = `.${key}`;
-    return evaluate(validator.$value || child, Schema, child, name);
+    const newName = name + `.${key}`;
+    return evaluate(validator.$value || child, newName, child);
   } else if (validator.type === 'array') {
     const newItems = [];
     for (let i = 0; i < value.length; i++) {
       const item = value[i];
-      const name = `[${i}]`;
-      const result = evaluate(validator.$item, Schema, item, name);
+      const newName = name + `[${i}]`;
+      const result = evaluate(validator.$item, newName, item);
       if (result instanceof Reject) {
         return result;
       }
@@ -208,9 +198,9 @@ function validate(validator, value, Schema) {
   throw 'type is not specified';
 }
 
-function evaluate(schema, Schema, value, name) {
+function evaluate(schema, name, value) {
   if (schema && schema._validate) {
-    return evaluate(schema._validate(value, name), Schema, value, name);
+    return evaluate(schema._validate(value, name), name, value);
   }
   return schema;
 }
