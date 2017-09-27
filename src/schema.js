@@ -23,6 +23,7 @@ function optional(value, defaultValue) {
 }
 
 const T = {
+  identity: [],
   value: ['value'],
   f: ['f'],
   key: ['key', 'value'],
@@ -32,11 +33,10 @@ const T = {
   check: ['check'],
   try_: ['try', 'catch'],
   items: ['item'],
-  reject: ['message'],
-  identity: []
+  reject: ['message']
 };
 
-function createStatics(instantiate) {
+function makeConstructors(Schema) {
   return Object.keys(T).reduce((memo, typeName) => {
     const propNames = T[typeName];
     memo[typeName] = function() {
@@ -49,33 +49,32 @@ function createStatics(instantiate) {
       }, {
         type: typeName
       });
-      return instantiate(props);
+      return new Schema(props);
     }
     return memo;
   }, {});
 }
 
-const createClass = plugins => {
-  const S = createStatics(instantiate);
-  S.extend = plugin => {
-    return createClass(plugins.concat([plugin]));
-  };
-
-  function instantiate(props) {
-    return new Schema(props);
-  }
-
-  const simple = Object.keys(S).reduce((memo, key) => {
-    const f = S[key];
+function nextify(simple) {
+  return Object.keys(simple).reduce((memo, key) => {
+    const f = simple[key];
     memo[key] = function() {
-      return S.next(this, f.apply(this, arguments));
+      return simple.next(this, f.apply(this, arguments));
     };
     return memo;
   }, {});
+}
+
+const createClass = plugins => {
   const Schema = function Schema(validator) {
     this._validator = validator;
   };
-  const methods = Object.assign({
+  const S = Object.assign(makeConstructors(Schema), {
+    extend(plugin) {
+      return createClass(plugins.concat([plugin]));
+    }
+  });
+  const methods = Object.assign(nextify(S), {
     next(schema) {
       return S.next(this, schema);
     },
@@ -92,7 +91,7 @@ const createClass = plugins => {
       }
       return newValue;
     }
-  }, simple);
+  });
   Schema.prototype = methods;
 
   Object.keys(S).forEach(key => {
@@ -105,6 +104,10 @@ const createClass = plugins => {
 function validate(validator, name, value) {
   if (validator.type === 'identity') {
     return value;
+  } else if (validator.type === 'value') {
+    return validator.value;
+  } else if (validator.type === 'f') {
+    return evaluate(validator.f(value), name, value);
   } else if (validator.type === 'reject') {
     return new Reject(validator.message, name, value);
   } else if (validator.type === 'satisfy') {
@@ -142,10 +145,6 @@ function validate(validator, name, value) {
     } else {
       return evaluate(optional(validator.else_, value), name, value);
     }
-  } else if (validator.type === 'value') {
-    return validator.value;
-  } else if (validator.type === 'f') {
-    return evaluate(validator.f(value), name, value);
   } else if (validator.type === 'key') {
     const key = validator.key;
     const child = value[key];
