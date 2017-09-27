@@ -113,10 +113,10 @@ module.exports = function(original) {
     },
     // Array(-like)
     minLength(limit) {
-      return Schema.check(Schema.key('length', min(limit)));
+      return this.check(Schema.key('length', min(limit)));
     },
     maxLength(limit) {
-      return Schema.check(Schema.key('length', max(limit)));
+      return this.check(Schema.key('length', max(limit)));
     },
     field(key, valueSchema, checkerSchema) {
       if (checkerSchema) {

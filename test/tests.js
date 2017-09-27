@@ -247,4 +247,7 @@ describe('schema-validator', function() {
       timeout: 10 * 1000
     }, 'options'), 'options.method', '"DELETE"');
   });
+  it('should cover edge case', function() {
+    throws(() => sv.number().minLength(0).validate('a', 'foo'));
+  });
 });
