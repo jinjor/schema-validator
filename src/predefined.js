@@ -70,5 +70,6 @@ module.exports = function(original) {
   }, {});
   const methods = Object.assign(simple, advanced);
   const Schema = original.extend(methods);
+  // const Schema = original.extend2(simple, advanced);
   return Schema;
 }

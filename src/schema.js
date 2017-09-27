@@ -72,7 +72,11 @@ const createClass = plugins => {
   const S = Object.assign(makeConstructors(Schema), {
     extend(plugin) {
       return createClass(plugins.concat([plugin]));
-    }
+    },
+    // extend2(simple, advanced) {
+    //   const plugin = Object.assign({}, nextify(simple), advanced);
+    //   return createClass(plugins.concat([plugin]));
+    // }
   });
   const methods = Object.assign(nextify(S), {
     next(schema) {
