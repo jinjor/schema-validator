@@ -249,5 +249,13 @@ describe('schema-validator', function() {
   });
   it('should cover edge case', function() {
     throws(() => sv.number().minLength(0).validate('a', 'foo'));
+    assert.deepEqual({
+      length: 0
+    }, sv.arrayLike().validate({
+      length: 0
+    }));
+    throws(() => sv.arrayLike().validate({
+      length: '1'
+    }, 'foo'));
   });
 });

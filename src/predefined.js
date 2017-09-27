@@ -99,7 +99,7 @@ module.exports = function(original) {
       return this.next(array());
     },
     arrayLike() {
-      return this.next(Schema.check(key('length').typeOf('number')));
+      return this.next(Schema.check(Schema.key('length').typeOf('number')));
     },
     defined() {
       return this.next(is(`defined`, value => typeof value !== 'undefined'));
