@@ -40,7 +40,7 @@ module.exports = function(original) {
       });
     }
   };
-  const methods = {
+  const advanced = {
     required() {
       return Schema.when(S.typeOf('undefined'), Schema.reject('is required'), this);
     },
@@ -61,12 +61,14 @@ module.exports = function(original) {
       return this.next(S.assign(S.keyValue(key, valueSchema)));
     }
   };
-  Object.keys(S).forEach(key => {
+  const simple = Object.keys(S).reduce((memo, key) => {
     const f = S[key];
-    methods[key] = function() {
+    memo[key] = function() {
       return this.next(f.apply(this, arguments));
-    }
-  });
+    };
+    return memo;
+  }, {});
+  const methods = Object.assign(simple, advanced);
   const Schema = original.extend(methods);
   return Schema;
 }
