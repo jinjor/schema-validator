@@ -23,6 +23,20 @@ module.exports = function(original) {
   const date = () => instanceOf(Date);
   const integer = () => is(`an integer`, value => value % 1 === 0);
   const array = () => is(`an array`, value => Array.isArray(value));
+  const keyValue = (key, valueSchema) => {
+    return Schema.key(key, valueSchema).then(v => {
+      return {
+        [key]: v
+      };
+    });
+  }
+  const assign = (objectSchema) => {
+    return Schema.func(value => {
+      return objectSchema.then(object => {
+        return Object.assign({}, value, object);
+      })
+    });
+  };
   const Schema = original.extend({
     // Satisfaction
     is(message, isValid) {
@@ -85,10 +99,10 @@ module.exports = function(original) {
       return this.next(array());
     },
     arrayLike() {
-      return this.check(key('length').typeOf('number'));
+      return this.next(Schema.check(key('length').typeOf('number')));
     },
     defined() {
-      return this.is(`defined`, value => typeof value !== 'undefined');
+      return this.next(is(`defined`, value => typeof value !== 'undefined'));
     },
     // Requisitions
     required() {
@@ -108,13 +122,7 @@ module.exports = function(original) {
       if (checkerSchema) {
         return Schema.when(checkerSchema, this.field(key, valueSchema));
       }
-      return this.then(value => {
-        return Schema.key(key, valueSchema).then(v => {
-          return Object.assign({}, value, {
-            [key]: v
-          });
-        })
-      });
+      return this.next(assign(keyValue(key, valueSchema)));
     }
   });
   return Schema;
