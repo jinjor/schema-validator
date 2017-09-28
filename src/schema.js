@@ -28,17 +28,14 @@ function makeConstructors(Schema) {
   return Object.keys(T).reduce((memo, typeName) => {
     const propNames = T[typeName];
     memo[typeName] = function() {
-      // console.log('S', typeName, arguments);
-      const props = Array.prototype.reduce.call(arguments, (memo, arg, i) => {
+      const instance = new Schema(typeName);
+      Array.prototype.forEach.call(arguments, (arg, i) => {
         const propName = propNames[i];
         if (propName) {
-          memo[propName] = arg ? (arg.validator || arg) : arg;
+          instance['$' + propName] = arg;
         }
-        return memo;
-      }, {
-        type: typeName
       });
-      return new Schema(props);
+      return instance;
     }
     return memo;
   }, {});
@@ -56,8 +53,8 @@ function nextify(S) {
 }
 
 const createClass = plugins => {
-  const Schema = function Schema(validator) {
-    this.validator = validator || S.identity().validator;
+  const Schema = function Schema(typeName) {
+    this.$type = typeName || 'identity';
   };
   const S = Object.assign(makeConstructors(Schema), {
     extend(plugin) {
@@ -89,70 +86,66 @@ const createClass = plugins => {
   return Schema;
 }
 
-function evaluate(validator, name, value) {
-  // Schema object
-  if (validator.validator) {
-    return evaluate(validator.validator, name, value);
-  }
+function evaluate(schema, name, value) {
   // bare value
-  if (!validator.type) {
-    return validator;
+  if (!schema.$type) {
+    return schema;
   }
 
-  if (validator.type === 'identity') {
+  if (schema.$type === 'identity') {
     return value;
-  } else if (validator.type === 'value') {
-    return validator.value;
-  } else if (validator.type === 'f') {
-    return evaluate(validator.f(value), name, value);
-  } else if (validator.type === 'reject') {
-    return new Reject(validator.message, name, value);
-  } else if (validator.type === 'satisfy') {
-    const valid = validator.isValid(value);
+  } else if (schema.$type === 'value') {
+    return schema.$value;
+  } else if (schema.$type === 'f') {
+    return evaluate(schema.$f(value), name, value);
+  } else if (schema.$type === 'reject') {
+    return new Reject(schema.$message, name, value);
+  } else if (schema.$type === 'satisfy') {
+    const valid = schema.$isValid(value);
     if (valid) {
       return value;
     } else {
-      return new Reject(validator.message, name, value);
+      return new Reject(schema.$message, name, value);
     }
-  } else if (validator.type === 'check') {
-    const checkValue = evaluate(validator.check, name, value);
+  } else if (schema.$type === 'check') {
+    const checkValue = evaluate(schema.$check, name, value);
     if (checkValue instanceof Reject) {
       return checkValue;
     } else {
       return value;
     }
-  } else if (validator.type === 'next') {
-    const newValue = evaluate(validator.first, name, value);
+  } else if (schema.$type === 'next') {
+    const newValue = evaluate(schema.$first, name, value);
     if (newValue instanceof Reject) {
       return newValue;
     } else {
-      return evaluate(optional(validator.second, newValue), name, newValue);
+      return evaluate(optional(schema.$second, newValue), name, newValue);
     }
-  } else if (validator.type === 'try_') {
-    const newValue = evaluate(validator.try_, name, value);
+  } else if (schema.$type === 'try_') {
+    const newValue = evaluate(schema.$try_, name, value);
     if (newValue instanceof Reject) {
-      return evaluate(validator.catch_, name, newValue);
+      return evaluate(schema.$catch_, name, newValue);
     } else {
       return evaluate(newValue, name, value);
     }
-  } else if (validator.type === 'when') {
-    const checkValue = evaluate(validator.when, name, value);
+  } else if (schema.$type === 'when') {
+    const checkValue = evaluate(schema.$when, name, value);
     if (!(checkValue instanceof Reject)) {
-      return evaluate(optional(validator.then, value), name, value);
+      return evaluate(optional(schema.$then, value), name, value);
     } else {
-      return evaluate(optional(validator.else_, value), name, value);
+      return evaluate(optional(schema.$else_, value), name, value);
     }
-  } else if (validator.type === 'key') {
-    const key = validator.key;
+  } else if (schema.$type === 'key') {
+    const key = schema.$key;
     const child = value[key];
     const newName = name + `.${key}`;
-    return evaluate(optional(validator.value, child), newName, child);
-  } else if (validator.type === 'items') {
+    return evaluate(optional(schema.$value, child), newName, child);
+  } else if (schema.$type === 'items') {
     const newItems = [];
     for (let i = 0; i < value.length; i++) {
       const item = value[i];
       const newName = name + `[${i}]`;
-      const result = evaluate(validator.item, newName, item);
+      const result = evaluate(schema.$item, newName, item);
       if (result instanceof Reject) {
         return result;
       }
@@ -160,7 +153,7 @@ function evaluate(validator, name, value) {
     }
     return newItems;
   }
-  throw 'type is not specified: ' + validator.type;
+  throw 'type is not specified: ' + schema.$type;
 }
 
 function addPlugin(prototype, plugin) {
