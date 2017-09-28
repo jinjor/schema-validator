@@ -55,7 +55,7 @@ function nextify(simple) {
 
 const createClass = plugins => {
   const Schema = function Schema(validator) {
-    this._validator = validator;
+    this.validator = validator;
   };
   const S = Object.assign(makeConstructors(Schema), {
     extend(plugin) {
@@ -73,11 +73,8 @@ const createClass = plugins => {
     then(f) {
       return S.next(this, S.f(f));
     },
-    _validate(value, name) {
-      return this._validator ? validate(this._validator, (name || 'value'), value) : value;
-    },
     validate(value, name) {
-      const newValue = this._validate(value, name);
+      const newValue = evaluate(this, (name || 'value'), value);
       if (newValue instanceof Reject) {
         throw newValue;
       }
@@ -93,7 +90,14 @@ const createClass = plugins => {
   return Schema;
 }
 
-function validate(validator, name, value) {
+function evaluate(schema, name, value) {
+  if (!schema || !schema.validate) {
+    return schema;
+  }
+  const validator = schema.validator;
+  if (!validator) {
+    return value;
+  }
   if (validator.type === 'identity') {
     return value;
   } else if (validator.type === 'value') {
@@ -156,13 +160,6 @@ function validate(validator, name, value) {
     return newItems;
   }
   throw 'type is not specified: ' + validator.type;
-}
-
-function evaluate(schema, name, value) {
-  if (schema && schema._validate) {
-    return evaluate(schema._validate(value, name), name, value);
-  }
-  return schema;
 }
 
 function addPlugin(prototype, plugin) {
