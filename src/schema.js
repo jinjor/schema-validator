@@ -28,10 +28,11 @@ function makeConstructors(Schema) {
   return Object.keys(T).reduce((memo, typeName) => {
     const propNames = T[typeName];
     memo[typeName] = function() {
+      // console.log('S', typeName, arguments);
       const props = Array.prototype.reduce.call(arguments, (memo, arg, i) => {
         const propName = propNames[i];
         if (propName) {
-          memo[propName] = arg;
+          memo[propName] = arg ? (arg.validator || arg) : arg;
         }
         return memo;
       }, {
@@ -43,11 +44,12 @@ function makeConstructors(Schema) {
   }, {});
 }
 
-function nextify(simple) {
-  return Object.keys(simple).reduce((memo, key) => {
-    const f = simple[key];
+function nextify(S) {
+  return Object.keys(S).reduce((memo, key) => {
+    const f = S[key];
     memo[key] = function() {
-      return simple.next(this, f.apply(this, arguments));
+      // console.log('method', key, arguments);
+      return S.next(this, f.apply(null, arguments));
     };
     return memo;
   }, {});
@@ -55,7 +57,7 @@ function nextify(simple) {
 
 const createClass = plugins => {
   const Schema = function Schema(validator) {
-    this.validator = validator;
+    this.validator = validator || S.identity().validator;
   };
   const S = Object.assign(makeConstructors(Schema), {
     extend(plugin) {
@@ -67,9 +69,6 @@ const createClass = plugins => {
     // }
   });
   const methods = Object.assign(nextify(S), {
-    next(schema) {
-      return S.next(this, schema);
-    },
     then(f) {
       return S.next(this, S.f(f));
     },
@@ -90,14 +89,16 @@ const createClass = plugins => {
   return Schema;
 }
 
-function evaluate(schema, name, value) {
-  if (!schema || !schema.validate) {
-    return schema;
+function evaluate(validator, name, value) {
+  // Schema object
+  if (validator.validator) {
+    return evaluate(validator.validator, name, value);
   }
-  const validator = schema.validator;
-  if (!validator) {
-    return value;
+  // bare value
+  if (!validator.type) {
+    return validator;
   }
+
   if (validator.type === 'identity') {
     return value;
   } else if (validator.type === 'value') {
