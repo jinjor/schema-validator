@@ -3,6 +3,10 @@ schema-validator
 
 [![Build Status](https://travis-ci.org/jinjor/schema-validator.svg)](https://travis-ci.org/jinjor/schema-validator)
 
+**Note**:
+  Worked hard but finally gave up for some reasons. Also, the following doc is outdated.
+
+
 Extensible Assertion + Transformation for function arguments. Highly inspired by [joi](https://github.com/hapijs/joi).
 
 
